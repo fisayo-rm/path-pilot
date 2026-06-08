@@ -1,0 +1,195 @@
+{
+  "id": "fCKmY6J4GYQHhyEl",
+  "name": "PathPilot — WF1 Lead Intake",
+  "active": false,
+  "description": "Phase 1 + dedup. Hosted intake form with consent gate → normalise → upsert lead (dedup on email) + audit → Call WF2 (extract/classify) → completion. Consent-denied path is audited and shown a notice.",
+  "settings": { "executionOrder": "v1", "availableInMCP": true },
+  "meta": { "aiBuilderAssisted": true, "builderVariant": "mcp" },
+  "tags": [],
+  "nodes": [
+    {
+      "id": "6baf7265-b45a-41c2-8e19-93ea8c803189",
+      "name": "Lead Intake Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [240, 400],
+      "webhookId": "26959862-76f6-48f8-9138-91b8ecee6417",
+      "parameters": {
+        "formTitle": "PathPilot — Study Abroad & Travel Enquiry",
+        "formDescription": "Tell us your goal and a counsellor will follow up. We collect only what we need to advise you — we never ask for passport scans or bank statements. Guidance is informational only and not a guarantee of admission, a visa, or a scholarship. You can ask us to correct or delete your data at any time.",
+        "responseMode": "lastNode",
+        "formFields": {
+          "values": [
+            { "fieldName": "fullName", "fieldLabel": "Full Name", "fieldType": "text", "requiredField": true },
+            { "fieldName": "email", "fieldLabel": "Email", "fieldType": "email", "requiredField": true },
+            { "fieldName": "phone", "fieldLabel": "Phone or WhatsApp Number", "fieldType": "text", "requiredField": false },
+            { "fieldName": "primaryInterest", "fieldLabel": "How can we help?", "fieldType": "dropdown", "requiredField": true, "fieldOptions": { "values": [ { "option": "Study Abroad" }, { "option": "Visa Support" }, { "option": "Flight Booking" }, { "option": "Other" } ] } },
+            { "fieldName": "message", "fieldLabel": "Tell us about your goal", "fieldType": "textarea", "requiredField": true },
+            { "fieldName": "consent", "fieldLabel": "Consent to processing", "fieldType": "dropdown", "requiredField": true, "fieldOptions": { "values": [ { "option": "Yes, I consent" }, { "option": "No, I do not consent" } ] } }
+          ]
+        },
+        "options": { "buttonLabel": "Submit enquiry", "path": "pathpilot-intake", "appendAttribution": false }
+      }
+    },
+    {
+      "id": "ea47ef52-8051-4f41-ba8c-6d137084efe4",
+      "name": "Normalise Enquiry",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 400],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "email_normalised", "value": "={{ ($json.email ?? $json.Email ?? \"\").toLowerCase().trim() }}", "type": "string" },
+            { "id": "a2", "name": "consent_given", "value": "={{ ($json.consent ?? $json[\"Consent to processing\"] ?? \"\") === \"Yes, I consent\" }}", "type": "boolean" },
+            { "id": "a3", "name": "consent_at", "value": "={{ $now.toISO() }}", "type": "string" },
+            { "id": "a4", "name": "channel", "value": "web_form", "type": "string" },
+            { "id": "a5", "name": "raw_message_composed", "value": "=[Interest: {{ $json.primaryInterest ?? $json[\"How can we help?\"] ?? \"Unknown\" }}] {{ $json.message ?? $json[\"Tell us about your goal\"] ?? \"\" }}", "type": "string" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cf4d7df5-c5a8-4b83-ac41-10dddad7bff6",
+      "name": "Consent Given?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [448, 96],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [ { "id": "c1", "leftValue": "={{ $json.consent_given }}", "operator": { "type": "boolean", "operation": "equals" }, "rightValue": true } ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "03f61d76-2a20-48fb-a4c0-69b3bbd4efd3",
+      "name": "Store Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [900, 260],
+      "parameters": {
+        "resource": "database",
+        "operation": "upsert",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "leads" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "channel": "web_form",
+            "consent_given": "={{ $json.consent_given }}",
+            "consent_at": "={{ $json.consent_at }}",
+            "consent_text_version": "v1-2026-06-02",
+            "name": "={{ $json.fullName ?? $json[\"Full Name\"] ?? \"\" }}",
+            "email": "={{ $json.email_normalised }}",
+            "phone": "={{ $json.phone ?? $json[\"Phone or WhatsApp Number\"] ?? \"\" }}",
+            "raw_message": "={{ $json.raw_message_composed }}",
+            "status": "new"
+          },
+          "matchingColumns": ["email"],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "24682291-4513-4a96-beda-ffd62a5354c7",
+      "name": "Audit: Lead Created",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1120, 260],
+      "parameters": {
+        "resource": "database",
+        "operation": "insert",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "audit_logs" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "actor_type": "system", "actor_id": "wf1-lead-intake", "action": "lead.created", "lead_id": "={{ $json.id }}", "workflow_id": "={{ $workflow.id }}" },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "39e8e24e-6fbc-4227-8d71-938a1991d9cf",
+      "name": "Call WF2 — Extract & Classify",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [1300, 420],
+      "parameters": {
+        "source": "database",
+        "workflowId": { "__rl": true, "mode": "id", "value": "38Cqymdj0fdOf38h", "cachedResultName": "PathPilot — WF2 Extract & Classify" },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": { "lead_id": "={{ $('Store Lead').item.json.id }}" },
+          "matchingColumns": [],
+          "schema": [{ "id": "lead_id", "displayName": "lead_id", "type": "string", "required": false, "display": true, "canBeUsedToMatch": true }]
+        },
+        "mode": "once",
+        "options": { "waitForSubWorkflow": true }
+      }
+    },
+    {
+      "id": "78712c14-43c5-4252-b800-665decd86e8a",
+      "name": "Completion - Received",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [1520, 260],
+      "webhookId": "0b856e70-0b73-4943-85eb-a67899eee38f",
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "Thank you — we've received your enquiry",
+        "completionMessage": "A counsellor will review your details and follow up within 24 hours. This guidance is informational only and not a guarantee of admission, a visa, or a scholarship."
+      }
+    },
+    {
+      "id": "4b9b37f4-7c01-4324-a3dc-a438dea5be01",
+      "name": "Audit: Consent Denied",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [900, 560],
+      "parameters": {
+        "resource": "database",
+        "operation": "insert",
+        "schema": { "__rl": true, "mode": "list", "value": "public" },
+        "table": { "__rl": true, "mode": "list", "value": "audit_logs" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": { "actor_type": "system", "actor_id": "wf1-lead-intake", "action": "lead.consent_denied" },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "beaeae99-2dc8-4d93-a12d-236d5078a825",
+      "name": "Completion - Consent Required",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [1120, 560],
+      "webhookId": "bf32e0aa-0787-457f-afa9-2fc05291c39a",
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "text",
+        "completionTitle": "We can't proceed without your consent",
+        "completionMessage": "We can only process your enquiry if you consent to us using your details to respond. If you change your mind, please submit the form again and choose the consent option."
+      }
+    }
+  ],
+  "connections": {
+    "Lead Intake Form": { "main": [[{ "node": "Normalise Enquiry", "type": "main", "index": 0 }]] },
+    "Normalise Enquiry": { "main": [[{ "node": "Consent Given?", "type": "main", "index": 0 }]] },
+    "Consent Given?": { "main": [[{ "node": "Store Lead", "type": "main", "index": 0 }], [{ "node": "Audit: Consent Denied", "type": "main", "index": 0 }]] },
+    "Store Lead": { "main": [[{ "node": "Audit: Lead Created", "type": "main", "index": 0 }]] },
+    "Audit: Lead Created": { "main": [[{ "node": "Call WF2 — Extract & Classify", "type": "main", "index": 0 }]] },
+    "Call WF2 — Extract & Classify": { "main": [[{ "node": "Completion - Received", "type": "main", "index": 0 }]] },
+    "Audit: Consent Denied": { "main": [[{ "node": "Completion - Consent Required", "type": "main", "index": 0 }]] }
+  }
+}

@@ -1,0 +1,15 @@
+# Deny-all allow-list: everything is ignored by default; only the entries
+# re-included below are tracked by git.
+
+# 1) Ignore every top-level entry
+/*
+
+# 2) Re-include exactly what we want in the repo
+!/.gitignore
+!/README.md
+!/workflows/
+
+# 3) demo/: keep the folder, but only the walkthrough file inside it
+!/demo/
+/demo/*
+!/demo/index.html

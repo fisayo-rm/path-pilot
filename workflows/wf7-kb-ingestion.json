@@ -1,0 +1,24 @@
+{
+  "id": "2m8aJW7jfucEbBL2",
+  "name": "PathPilot — WF7 KB Ingestion",
+  "active": false,
+  "description": "Phase 3. Manual trigger: fetches all pending KB documents from Supabase, chunks them (800 tokens, markdown-aware), embeds with OpenAI text-embedding-3-small, inserts into pgvector table kb_chunks with metadata for filtering, then marks all embedded. Run once per batch of new/updated KB docs.",
+  "settings": { "executionOrder": "v1", "availableInMCP": true },
+  "nodes": [
+    { "id": "18bd4046-ffff-442e-b55a-0530c0929642", "name": "Run KB Ingestion", "type": "n8n-nodes-base.manualTrigger", "typeVersion": 1, "position": [240, 400], "parameters": {} },
+    { "id": "0642ae44-08ae-4ceb-ba54-23d47e22e57a", "name": "Get Pending Docs", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [464, 400], "parameters": { "operation": "executeQuery", "query": "SELECT id, title, category, country, approved_for_customer_use, content_text FROM knowledge_documents WHERE embedding_status = 'pending' AND content_text IS NOT NULL ORDER BY id", "options": {} } },
+    { "id": "aed19a63-e93c-4bd1-9923-39b453cbcf88", "name": "Insert KB Chunks", "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector", "typeVersion": 1.3, "position": [672, 400], "parameters": { "mode": "insert", "tableName": "kb_chunks", "options": {} } },
+    { "id": "a5d30297-929a-44e6-9778-94c5fe602502", "name": "OpenAI Embeddings", "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi", "typeVersion": 1.2, "position": [496, 608], "parameters": { "options": { "dimensions": 1536 } } },
+    { "id": "ea0eaf58-27fa-41be-b3e2-5a37c105db90", "name": "Document Loader", "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader", "typeVersion": 1.1, "position": [800, 608], "parameters": { "jsonMode": "expressionData", "jsonData": "={{ $json.content_text }}", "textSplittingMode": "custom", "options": { "metadata": { "metadataValues": [ { "name": "document_id", "value": "={{ $json.id }}" }, { "name": "title", "value": "={{ $json.title }}" }, { "name": "category", "value": "={{ $json.category }}" }, { "name": "country", "value": "={{ $json.country ?? \"global\" }}" }, { "name": "approved_for_customer_use", "value": "={{ String($json.approved_for_customer_use) }}" } ] } } } },
+    { "id": "592eb53b-3392-416e-8653-ba82ca42abe1", "name": "Text Splitter", "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter", "typeVersion": 1, "position": [752, 784], "parameters": { "chunkSize": 800, "chunkOverlap": 100, "options": { "splitCode": "markdown" } } },
+    { "id": "aff1fb6f-8455-482d-ab1b-df9a6679c3bc", "name": "Mark All Embedded", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [1024, 400], "executeOnce": true, "parameters": { "operation": "executeQuery", "query": "UPDATE knowledge_documents SET embedding_status = 'embedded' WHERE embedding_status = 'pending' AND content_text IS NOT NULL", "options": {} } }
+  ],
+  "connections": {
+    "Run KB Ingestion": { "main": [[{ "node": "Get Pending Docs", "type": "main", "index": 0 }]] },
+    "Get Pending Docs": { "main": [[{ "node": "Insert KB Chunks", "type": "main", "index": 0 }]] },
+    "Insert KB Chunks": { "main": [[{ "node": "Mark All Embedded", "type": "main", "index": 0 }]] },
+    "OpenAI Embeddings": { "ai_embedding": [[{ "node": "Insert KB Chunks", "type": "ai_embedding", "index": 0 }]] },
+    "Document Loader": { "ai_document": [[{ "node": "Insert KB Chunks", "type": "ai_document", "index": 0 }]] },
+    "Text Splitter": { "ai_textSplitter": [[{ "node": "Document Loader", "type": "ai_textSplitter", "index": 0 }]] }
+  }
+}

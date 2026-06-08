@@ -1,0 +1,16 @@
+{
+  "id": "Sxtfdv2FS8avBTvk",
+  "name": "PathPilot — Error Notification",
+  "active": true,
+  "description": "Triggered automatically by n8n when any PathPilot workflow fails. Emails aikomofisayo@gmail.com with the failing workflow name, execution ID, error message, and a direct link to the execution log. Also writes workflow.error to audit_logs. Set this as the Error Workflow in each PathPilot workflow's Settings panel.",
+  "settings": { "executionOrder": "v1", "availableInMCP": true },
+  "nodes": [
+    { "id": "c2acc3c0-efa7-4d67-9b37-6789c21a1a56", "name": "On Workflow Error", "type": "n8n-nodes-base.errorTrigger", "typeVersion": 1, "position": [240, 400], "parameters": {} },
+    { "id": "5fcaee24-ab4f-46c5-8b5c-f9fc2f43c316", "name": "Notify: Workflow Error", "type": "n8n-nodes-base.gmail", "typeVersion": 2.2, "position": [480, 400], "webhookId": "ab29ba59-b4ce-4de0-ad25-4a58cf8d98bb", "parameters": { "resource": "message", "operation": "send", "sendTo": "aikomofisayo@gmail.com", "subject": "={{ \"PathPilot ERROR — \" + $json.workflow.name }}", "emailType": "html", "message": "=<h3 style=\"color:red\">PathPilot Workflow Error</h3><p><strong>Workflow:</strong> {{ $json.workflow.name }}</p><p><strong>Execution ID:</strong> {{ $json.execution.id }}</p><p><strong>Error:</strong> {{ $json.execution.error.message }}</p><p><strong>View execution:</strong> <a href=\"{{ $json.execution.url }}\">{{ $json.execution.url }}</a></p><hr><p><small>This is an automated alert from PathPilot. No customer data was exposed. Check the execution log to diagnose and retry if needed.</small></p>", "options": { "appendAttribution": false, "senderName": "PathPilot Alerts" } } },
+    { "id": "e1a05e8b-f722-41c5-967c-3ff272312f42", "name": "Log Error to Audit", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [720, 400], "parameters": { "resource": "database", "operation": "insert", "schema": { "__rl": true, "mode": "list", "value": "public" }, "table": { "__rl": true, "mode": "list", "value": "audit_logs" }, "columns": { "mappingMode": "defineBelow", "value": { "actor_type": "system", "actor_id": "={{ $('On Workflow Error').item.json.workflow.id }}", "action": "workflow.error", "workflow_id": "={{ $('On Workflow Error').item.json.workflow.id }}", "metadata": "={{ JSON.stringify({ workflow_name: $('On Workflow Error').item.json.workflow.name, execution_id: $('On Workflow Error').item.json.execution.id, error_message: $('On Workflow Error').item.json.execution.error.message }) }}" }, "matchingColumns": [], "schema": [] }, "options": {} } }
+  ],
+  "connections": {
+    "On Workflow Error": { "main": [[{ "node": "Notify: Workflow Error", "type": "main", "index": 0 }]] },
+    "Notify: Workflow Error": { "main": [[{ "node": "Log Error to Audit", "type": "main", "index": 0 }]] }
+  }
+}

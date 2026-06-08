@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PathPilot — Interactive Walkthrough</title>
+<style>
+:root{
+  --bg:#0b1020; --panel:#0f172a; --panel2:#1e293b; --line:#334155;
+  --ink:#e2e8f0; --muted:#94a3b8; --soft:#cbd5e1;
+  --brand:#2563eb; --brand2:#0ea5e9; --accent:#14b8a6;
+  --green:#22c55e; --amber:#f59e0b; --red:#ef4444; --violet:#8b5cf6;
+  --radius:14px; --shadow:0 10px 40px rgba(0,0,0,.35);
+  font-synthesis:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:radial-gradient(1200px 800px at 80% -10%,#13224a 0,var(--bg) 55%);
+  color:var(--ink); overflow:hidden;
+}
+.app{display:flex;flex-direction:column;height:100vh}
+
+/* Header */
+.hdr{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line);background:rgba(15,23,42,.6);backdrop-filter:blur(6px);flex:0 0 auto}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}
+.logo svg{width:26px;height:26px}
+.logo b{font-size:17px}
+.logo span{color:var(--brand2)}
+.hdr .tag{color:var(--muted);font-size:12.5px;border-left:1px solid var(--line);padding-left:14px}
+.hdr .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.counter{font-size:12.5px;color:var(--soft);background:var(--panel2);border:1px solid var(--line);padding:6px 11px;border-radius:999px}
+.restart{font-size:12.5px;color:var(--muted);background:transparent;border:1px solid var(--line);padding:6px 11px;border-radius:999px;cursor:pointer}
+.restart:hover{color:var(--ink);border-color:var(--brand)}
+
+/* Layout */
+.main{display:grid;grid-template-columns:248px 1fr;flex:1 1 auto;min-height:0}
+.side{border-right:1px solid var(--line);padding:14px 10px;overflow:auto;background:rgba(15,23,42,.35)}
+.side h4{margin:6px 8px 10px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.snav{display:flex;flex-direction:column;gap:2px}
+.snav button{display:flex;align-items:center;gap:10px;text-align:left;background:transparent;border:0;color:var(--soft);padding:8px 10px;border-radius:9px;cursor:pointer;font-size:13px;line-height:1.25;width:100%}
+.snav button:hover{background:var(--panel2)}
+.snav button.active{background:linear-gradient(90deg,rgba(37,99,235,.25),rgba(14,165,233,.08));color:#fff;box-shadow:inset 2px 0 0 var(--brand2)}
+.snav .num{flex:0 0 22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:11px;color:var(--muted)}
+.snav button.active .num{background:var(--brand);border-color:var(--brand);color:#fff}
+.snav button.done .num{background:var(--green);border-color:var(--green);color:#06210f}
+
+/* Stage */
+.stage{display:flex;flex-direction:column;min-width:0;min-height:0;padding:18px 22px 0}
+.browser{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);flex:1 1 auto;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:#0c1326;flex:0 0 auto}
+.dots{display:flex;gap:6px}
+.dots i{width:11px;height:11px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:#ff5f57}.dots i:nth-child(2){background:#febc2e}.dots i:nth-child(3){background:#28c840}
+.url{flex:1;background:#0a1020;border:1px solid var(--line);border-radius:8px;padding:6px 12px;color:var(--soft);font-size:12.5px;display:flex;align-items:center;gap:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.url svg{width:13px;height:13px;flex:0 0 auto;color:var(--green)}
+.screen{flex:1 1 auto;overflow:auto;padding:26px;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Narration */
+.narr{flex:0 0 auto;display:flex;align-items:center;gap:18px;padding:14px 24px 18px}
+.narr .body{flex:1;min-width:0}
+.narr .t{font-weight:700;font-size:15px;margin:0 0 3px;display:flex;align-items:center;gap:10px}
+.narr .t .crit{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#0b1020;background:var(--accent);padding:3px 8px;border-radius:999px}
+.narr .d{margin:0;color:var(--soft);font-size:13.5px;line-height:1.5;max-width:90ch}
+.nav{display:flex;gap:10px;flex:0 0 auto}
+.btn{border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:10px 16px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--brand)}
+.btn.primary{background:linear-gradient(90deg,var(--brand),var(--brand2));border-color:transparent;color:#fff}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* hotspots */
+.hs{position:relative;display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;vertical-align:middle;cursor:help;outline:none}
+.hs::before{content:"";position:absolute;width:12px;height:12px;border-radius:50%;background:var(--brand2);box-shadow:0 0 0 rgba(14,165,233,.6);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(14,165,233,.55)}70%{box-shadow:0 0 0 12px rgba(14,165,233,0)}100%{box-shadow:0 0 0 0 rgba(14,165,233,0)}}
+.hs[data-tip]:hover::after,.hs[data-tip]:focus::after{content:attr(data-tip);position:absolute;bottom:140%;left:50%;transform:translateX(-50%);background:#020617;color:#e2e8f0;border:1px solid var(--brand);padding:8px 11px;border-radius:8px;font-size:12px;line-height:1.4;width:230px;z-index:20;box-shadow:var(--shadow);font-weight:500}
+.hs.act{cursor:pointer}
+.hs.act::before{background:var(--green);animation-name:pulseG}
+@keyframes pulseG{0%{box-shadow:0 0 0 0 rgba(34,197,94,.6)}70%{box-shadow:0 0 0 13px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+
+/* generic screen bits */
+.h1{font-size:22px;margin:0 0 4px;font-weight:800}
+.h2{font-size:16px;margin:0 0 14px;color:var(--muted);font-weight:600}
+.kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand2);font-weight:700;margin:0 0 8px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px}
+.row{display:flex;gap:16px;flex-wrap:wrap}
+.col{flex:1 1 320px;min-width:0}
+.muted{color:var(--muted)}
+.tiny{font-size:12px}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+/* intro */
+.intro{max-width:760px;margin:18px auto;text-align:center}
+.intro .big{font-size:40px;font-weight:900;letter-spacing:-.5px;margin:8px 0}
+.intro .big span{background:linear-gradient(90deg,var(--brand2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+.intro p{color:var(--soft);font-size:15px;line-height:1.65}
+.stackrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:22px 0}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%}
+.flowmini{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px;color:var(--muted);font-size:12.5px;font-weight:600}
+.flowmini b{color:var(--ink)} .flowmini .ar{color:var(--brand2)}
+
+/* form */
+.formwrap{max-width:560px;margin:0 auto}
+.formcard{background:#fff;color:#0f172a;border-radius:14px;padding:26px 26px 22px;box-shadow:var(--shadow)}
+.formcard h3{margin:0 0 6px;font-size:19px}
+.formcard .desc{color:#475569;font-size:12.5px;line-height:1.5;margin:0 0 18px;border-bottom:1px solid #e2e8f0;padding-bottom:14px}
+.fld{margin-bottom:13px}
+.fld label{display:block;font-size:12.5px;font-weight:600;color:#334155;margin-bottom:5px}
+.fld .inp{border:1px solid #cbd5e1;border-radius:8px;padding:9px 11px;font-size:13.5px;color:#0f172a;background:#f8fafc;min-height:18px}
+.fld textarea.inp{min-height:60px;white-space:pre-wrap;width:100%}
+.fld .inp.sel{display:flex;align-items:center;justify-content:space-between}
+.fld .inp.sel.yes{border-color:#16a34a;background:#f0fdf4;color:#166534;font-weight:600}
+.req{color:#dc2626}
+.submitbtn{background:#2563eb;color:#fff;border:0;border-radius:9px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-top:6px}
+.thanks{max-width:520px;margin:30px auto;text-align:center;background:#fff;color:#0f172a;border-radius:14px;padding:40px 28px;box-shadow:var(--shadow)}
+.thanks .ok{width:64px;height:64px;border-radius:50%;background:#dcfce7;color:#16a34a;display:grid;place-items:center;margin:0 auto 16px}
+.thanks h3{margin:0 0 8px}
+.thanks p{color:#475569;font-size:14px;line-height:1.6;margin:0}
+
+/* pipeline */
+.pipe{display:flex;flex-wrap:wrap;gap:0 0;align-items:stretch}
+.node{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;display:flex;align-items:center;gap:10px;min-width:0;position:relative}
+.node .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;font-size:15px}
+.node .nm{font-size:12.5px;font-weight:600;line-height:1.2}
+.node .sub{font-size:11px;color:var(--muted)}
+.node .chk{position:absolute;top:-7px;right:-7px;width:18px;height:18px;border-radius:50%;background:var(--green);color:#06210f;display:grid;place-items:center;font-size:11px;border:2px solid var(--panel)}
+.arrow{align-self:center;color:var(--brand2);padding:0 8px;font-size:16px;flex:0 0 auto}
+.branch{display:flex;flex-direction:column;gap:10px}
+.banner{display:flex;align-items:center;gap:10px;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.4);color:#86efac;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:18px}
+
+/* json */
+.jsonbox{background:#020617;border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.65;overflow:auto}
+.j-k{color:#7dd3fc}.j-s{color:#86efac}.j-n{color:#fca5a5}.j-b{color:#fcd34d}.j-p{color:#64748b}
+.statline{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:12.5px}
+.stat b{color:#fff;font-size:15px;display:block}
+
+/* supabase table */
+.sb{background:#0c1322;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sb .bar{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--soft);background:#0a1120}
+.sb .bar .gn{color:#3ecf8e;font-weight:700}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;padding:9px 13px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);white-space:nowrap;background:#0a1120;position:sticky;top:0}
+.tbl td{padding:9px 13px;border-bottom:1px solid #1e293b;white-space:nowrap;color:var(--soft)}
+.tbl tr:hover td{background:rgba(37,99,235,.06)}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600}
+.pill.b{background:rgba(37,99,235,.2);color:#93c5fd}
+.pill.g{background:rgba(34,197,94,.16);color:#86efac}
+.pill.a{background:rgba(245,158,11,.16);color:#fcd34d}
+.pill.v{background:rgba(139,92,246,.18);color:#c4b5fd}
+.pill.r{background:rgba(239,68,68,.16);color:#fca5a5}
+
+/* source cards */
+.srcs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.src{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:13px}
+.src .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.src .ti{font-size:13px;font-weight:700}
+.src .sn{font-size:12px;color:var(--soft);line-height:1.5}
+.score{font-size:11px;color:var(--muted);font-family:ui-monospace,monospace}
+
+/* recommendation */
+.reco{display:grid;grid-template-columns:1fr 1.15fr;gap:16px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.bdg{font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:8px;display:inline-flex;gap:6px;align-items:center}
+.bdg.no{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.4)}
+.bdg.rev{background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.4)}
+.bdg.cf{background:rgba(37,99,235,.15);color:#93c5fd;border:1px solid rgba(37,99,235,.4)}
+.email{background:#fff;color:#0f172a;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:var(--shadow)}
+.email .ehd{padding:13px 16px;border-bottom:1px solid #eef2f7;background:#f8fafc}
+.email .ehd .s{font-weight:700;font-size:14px}
+.email .ehd .m{font-size:11.5px;color:#64748b;margin-top:3px}
+.email .eb{padding:14px 16px;font-size:12.5px;line-height:1.55;color:#334155;max-height:230px;overflow:auto;white-space:pre-wrap}
+.checklist{list-style:none;margin:8px 0 0;padding:0;columns:1}
+.checklist li{font-size:12.5px;color:var(--soft);padding:5px 0 5px 22px;position:relative;line-height:1.4}
+.checklist li::before{content:"☐";position:absolute;left:0;color:var(--brand2)}
+.flags li{font-size:12.5px;color:#fecaca;padding:6px 0 6px 20px;position:relative;line-height:1.45;list-style:none}
+.flags{margin:0;padding:0}
+.flags li::before{content:"⚑";position:absolute;left:0;color:var(--red)}
+.summary{font-size:13px;line-height:1.6;color:var(--soft)}
+
+/* email approval */
+.approval{max-width:640px;margin:0 auto;background:#fff;color:#0f172a;border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.approval .top{padding:14px 18px;border-bottom:1px solid #eef2f7;background:#f8fafc}
+.approval .from{display:flex;align-items:center;gap:10px}
+.approval .av{width:34px;height:34px;border-radius:50%;background:#2563eb;color:#fff;display:grid;place-items:center;font-weight:700}
+.approval .sub{font-weight:700;font-size:14.5px;margin:10px 0 0}
+.approval .bd{padding:16px 18px;font-size:13px;line-height:1.55;color:#334155}
+.approval .bd h4{margin:14px 0 6px;font-size:13px;color:#0f172a}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;font-size:12.5px;margin:4px 0}
+.kv span:nth-child(odd){color:#64748b}
+.draftbox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:11px 13px;font-size:12px;line-height:1.5;color:#475569;max-height:150px;overflow:auto;white-space:pre-wrap;margin-top:6px}
+.ebtns{display:flex;gap:12px;padding:16px 18px;border-top:1px solid #eef2f7;background:#fafbfc}
+.eb-approve{background:#16a34a;color:#fff;border:0;border-radius:9px;padding:11px 20px;font-weight:700;font-size:13.5px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.eb-decline{background:#fff;color:#64748b;border:1px solid #cbd5e1;border-radius:9px;padding:11px 20px;font-weight:600;font-size:13.5px;cursor:pointer}
+.disc{font-size:11px;color:#94a3b8;font-style:italic;margin-top:10px;border-top:1px dashed #e2e8f0;padding-top:8px}
+
+/* metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.metric{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:15px}
+.metric .v{font-size:26px;font-weight:800;color:#fff}
+.metric .l{font-size:11.5px;color:var(--muted);margin-top:2px}
+.bars{display:flex;flex-direction:column;gap:9px}
+.bar{display:flex;align-items:center;gap:10px;font-size:12.5px}
+.bar .lab{width:160px;color:var(--soft)}
+.bar .track{flex:1;height:14px;background:#0a1120;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.bar .fill{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+.bar .vn{width:28px;text-align:right;color:var(--muted)}
+
+/* closing */
+.closing{max-width:720px;margin:14px auto;text-align:center}
+.closing .big{font-size:30px;font-weight:900;margin:6px 0 14px}
+.recap{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;text-align:left;margin:20px 0}
+.recap .it{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:14px}
+.recap .it b{color:#fff;font-size:13.5px}
+.recap .it p{margin:4px 0 0;font-size:12.5px;color:var(--muted);line-height:1.45}
+
+@media (max-width:880px){
+  .main{grid-template-columns:1fr}
+  .side{display:none}
+  .reco{grid-template-columns:1fr}
+  .srcs{grid-template-columns:1fr}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .narr{flex-direction:column;align-items:stretch;gap:12px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hdr">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2 4 7v10l8 5 8-5V7l-8-5Z" stroke="#0ea5e9" stroke-width="1.6"/><path d="M12 7v5l3.5 2" stroke="#14b8a6" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <b>Path<span>Pilot</span></b>
+    </div>
+    <div class="tag">Interactive Walkthrough · agentic study-abroad &amp; travel workflows</div>
+    <div class="right">
+      <div class="counter" id="counter">Step 1 / 13</div>
+      <button class="restart" id="restart">↺ Restart</button>
+    </div>
+  </header>
+  <div class="main">
+    <aside class="side">
+      <h4>Demo journey</h4>
+      <div class="snav" id="snav"></div>
+    </aside>
+    <section class="stage">
+      <div class="browser">
+        <div class="chrome">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="url"><svg viewBox="0 0 24 24" fill="none"><path d="M7 10V8a5 5 0 0 1 10 0v2" stroke="currentColor" stroke-width="2"/><rect x="5" y="10" width="14" height="10" rx="2" fill="currentColor"/></svg><span id="url">pathpilot · welcome</span></div>
+        </div>
+        <div class="screen" id="screen"></div>
+      </div>
+      <div class="narr">
+        <div class="body">
+          <p class="t"><span id="ntitle">Welcome</span> <span class="crit" id="ncrit" style="display:none"></span></p>
+          <p class="d" id="nbody"></p>
+        </div>
+        <div class="nav">
+          <button class="btn" id="prev">← Back</button>
+          <button class="btn primary" id="next">Next →</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ---------- screen builders (use real PathPilot data) ---------- */
+function scrIntro(){return `
+  <div class="intro">
+    <p class="kicker">Capstone prototype · n8n + Claude + Supabase</p>
+    <div class="big">Turn a raw enquiry into a <span>human-approved plan</span></div>
+    <p>PathPilot is an agentic workflow for a Nigerian study-abroad &amp; travel agency. It captures an enquiry, extracts structured data with Claude, retrieves guidance from a curated knowledge base, drafts a recommendation, routes it to a counsellor for approval, sends the response, and schedules a follow-up — every AI decision logged, nothing sent without human review.</p>
+    <div class="stackrow">
+      <div class="chip"><span class="dot" style="background:#ff6d5a"></span>n8n orchestration</div>
+      <div class="chip"><span class="dot" style="background:#d77655"></span>Claude (Anthropic)</div>
+      <div class="chip"><span class="dot" style="background:#3ecf8e"></span>Supabase + pgvector</div>
+      <div class="chip"><span class="dot" style="background:#10a37f"></span>OpenAI embeddings</div>
+      <div class="chip"><span class="dot" style="background:#ea4335"></span>Gmail</div>
+    </div>
+    <div class="flowmini"><b>WF1</b> intake <span class="ar">→</span> <b>WF2</b> extract <span class="ar">→</span> <b>WF3</b> recommend <span class="ar">→</span> <b>WF4</b> approve <span class="ar">→</span> <b>WF5</b> follow-up</div>
+    <p class="tiny muted" style="margin-top:22px">This is a faithful reconstruction built from real execution data. Use <b>Next →</b> (or → key) and click the pulsing <span class="hs" data-tip="Pulsing dots are hotspots. Blue = info on hover, green = a click that advances the demo."></span> hotspots.</p>
+  </div>`}
+
+function scrForm(){return `
+  <div class="formwrap">
+    <div class="formcard">
+      <h3>PathPilot — Study Abroad &amp; Travel Enquiry</h3>
+      <p class="desc">Tell us your goal and a counsellor will follow up. We collect only what we need to advise you — we never ask for passport scans or bank statements. Guidance is informational only and not a guarantee of admission, a visa, or a scholarship.</p>
+      <div class="fld"><label>Full Name <span class="req">*</span></label><div class="inp">Adaeze Okafor</div></div>
+      <div class="fld"><label>Email <span class="req">*</span></label><div class="inp">adaeze.demo@example.com</div></div>
+      <div class="fld"><label>Phone or WhatsApp Number</label><div class="inp">+234 803 000 1240</div></div>
+      <div class="fld"><label>How can we help? <span class="req">*</span></label><div class="inp sel">Study Abroad <span class="muted">▾</span></div></div>
+      <div class="fld"><label>Tell us about your goal <span class="req">*</span></label><textarea class="inp" readonly>I want to study Nursing in the UK or Canada. I have WAEC, no IELTS yet, and I want to start in 2027. My uncle will sponsor me with a budget of around 15,000 USD per year. I have a valid passport.</textarea></div>
+      <div class="fld"><label>Consent to processing <span class="req">*</span> <span class="hs" data-tip="Hard gate: no data is processed without explicit consent. WF1 routes a 'No' to a polite stop."></span></label><div class="inp sel yes">Yes, I consent <span>▾</span></div></div>
+      <button class="submitbtn" data-advance>Submit enquiry &nbsp;<span class="hs act" data-tip="Click to submit — this fires the WF1 webhook." style="filter:invert(1)"></span></button>
+    </div>
+  </div>`}
+
+function scrThanks(){return `
+  <div class="thanks">
+    <div class="ok"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="m5 13 4 4 10-10" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <h3>Thank you — we've received your enquiry</h3>
+    <p>A counsellor will review your details and follow up within 24 hours. This guidance is informational only and not a guarantee of admission, a visa, or a scholarship.</p>
+  </div>
+  <p class="tiny muted" style="text-align:center;margin-top:18px">Behind the scenes, everything below now happens automatically.</p>`}
+
+function node(ic,bg,nm,sub,hs){return `<div class="node"><div class="ic" style="background:${bg.bg};color:${bg.fg}">${ic}</div><div><div class="nm">${nm}</div>${sub?`<div class="sub">${sub}</div>`:""}</div><div class="chk">✓</div>${hs||""}</div>`}
+const PG={bg:"rgba(62,207,142,.15)",fg:"#3ecf8e"}, AI={bg:"rgba(216,118,85,.18)",fg:"#e09b80"}, NB={bg:"rgba(37,99,235,.18)",fg:"#93c5fd"}, FRM={bg:"rgba(255,109,90,.16)",fg:"#ff9b86"};
+const ar=`<span class="arrow">→</span>`;
+
+function scrWF1(){return `
+  <p class="kicker">n8n · WF1 Lead Intake — execution succeeded</p>
+  <div class="banner"><span>✓</span> Lead upserted &amp; logged in 1.4s · consent verified · WF2 invoked</div>
+  <div class="pipe">
+    ${node("📝",FRM,"Lead Intake Form","form trigger")}${ar}
+    ${node("✦",NB,"Normalise Enquiry","email · consent · channel")}${ar}
+    ${node("◆",NB,"Consent Given?","IF","<span class='hs' data-tip='The consent gate. \"No\" routes to a polite stop and is audited; nothing else runs.' style='position:absolute;top:-9px;left:-9px'></span>")}${ar}
+    ${node("🗄",PG,"Store Lead","upsert on email")}${ar}
+    ${node("📋",PG,"Audit: Lead Created","audit_logs")}${ar}
+    ${node("⇲",NB,"Call WF2","extract &amp; classify","<span class='hs' data-tip='Hands off to WF2 with the new lead_id — the chain continues automatically.' style='position:absolute;top:-9px;right:-9px'></span>")}${ar}
+    ${node("✅",FRM,"Completion","thank-you page")}
+  </div>
+  <div class="statline">
+    <div class="stat"><b>web_form</b>channel</div>
+    <div class="stat"><b>true</b>consent_given</div>
+    <div class="stat"><b>new → </b>lead status</div>
+    <div class="stat"><b>lead.created</b>audit action</div>
+  </div>`}
+
+function scrWF2(){return `
+  <p class="kicker">n8n · WF2 › Extract &amp; Classify — Claude Sonnet 4.6 output</p>
+  <div class="jsonbox">{
+  <span class="j-k">"service_intent"</span><span class="j-p">:</span> <span class="j-s">"study_abroad"</span><span class="j-p">,</span>
+  <span class="j-k">"additional_intents"</span><span class="j-p">:</span> <span class="j-p">[</span><span class="j-s">"admission_counselling"</span><span class="j-p">,</span> <span class="j-s">"visa_assistance"</span><span class="j-p">]</span><span class="j-p">,</span>
+  <span class="j-k">"programme_level"</span><span class="j-p">:</span> <span class="j-s">"undergraduate"</span><span class="j-p">,</span>
+  <span class="j-k">"desired_course"</span><span class="j-p">:</span> <span class="j-s">"Nursing"</span><span class="j-p">,</span>
+  <span class="j-k">"preferred_countries"</span><span class="j-p">:</span> <span class="j-p">[</span><span class="j-s">"UK"</span><span class="j-p">,</span> <span class="j-s">"Canada"</span><span class="j-p">]</span><span class="j-p">,</span>
+  <span class="j-k">"budget_range"</span><span class="j-p">:</span> <span class="j-s">"approximately 15,000 USD per year"</span><span class="j-p">,</span>
+  <span class="j-k">"target_intake"</span><span class="j-p">:</span> <span class="j-s">"2027"</span><span class="j-p">,</span>
+  <span class="j-k">"qualification"</span><span class="j-p">:</span> <span class="j-s">"WAEC"</span><span class="j-p">,</span>
+  <span class="j-k">"english_test_status"</span><span class="j-p">:</span> <span class="j-s">"no IELTS yet"</span><span class="j-p">,</span>
+  <span class="j-k">"passport_status"</span><span class="j-p">:</span> <span class="j-s">"valid passport"</span><span class="j-p">,</span>
+  <span class="j-k">"sponsor_status"</span><span class="j-p">:</span> <span class="j-s">"uncle sponsoring"</span><span class="j-p">,</span>
+  <span class="j-k">"urgency"</span><span class="j-p">:</span> <span class="j-s">"low"</span><span class="j-p">,</span>
+  <span class="j-k">"lead_score"</span><span class="j-p">:</span> <span class="j-n">78</span><span class="j-p">,</span>
+  <span class="j-k">"missing_fields"</span><span class="j-p">:</span> <span class="j-p">[</span><span class="j-s">"specific university preferences"</span><span class="j-p">,</span> <span class="j-s">"IELTS score or test date"</span><span class="j-p">]</span><span class="j-p">,</span>
+  <span class="j-k">"is_spam"</span><span class="j-p">:</span> <span class="j-b">false</span><span class="j-p">,</span>
+  <span class="j-k">"confidence"</span><span class="j-p">:</span> <span class="j-n">0.95</span>
+}</div>
+  <div class="statline">
+    <div class="stat"><b>7+</b>fields extracted</div>
+    <div class="stat"><b>0.95</b>confidence</div>
+    <div class="stat"><b>~4s</b>Claude latency</div>
+    <div class="stat"><b>study_abroad</b>intent <span class="hs" data-tip="Classified into 1 of 10 intent categories. The schema is enforced by a Structured Output Parser sub-node."></span></div>
+  </div>`}
+
+function scrLead(){return `
+  <p class="kicker">Supabase · Table Editor</p>
+  <div class="sb">
+    <div class="bar"><span class="gn">leads</span> · 1 row returned · structured fields written by WF2</div>
+    <div style="overflow:auto"><table class="tbl">
+      <tr><th>name</th><th>service_intent</th><th>desired_course</th><th>preferred_countries</th><th>qualification</th><th>budget_range</th><th>lead_score</th><th>status</th></tr>
+      <tr><td>Adaeze Okafor</td><td><span class="pill b">study_abroad</span></td><td>Nursing</td><td class="mono">["UK","Canada"]</td><td>WAEC</td><td>~15,000 USD/yr</td><td><b style="color:#fff">78</b></td><td><span class="pill a">info_needed</span></td></tr>
+    </table></div>
+  </div>
+  <p class="tiny muted" style="margin-top:14px">The raw message becomes a structured, queryable record. <span class="hs" data-tip="preferred_countries and missing_fields are stored as jsonb arrays. Status is info_needed because some optional fields are still missing."></span> Persisted in Postgres, ready for retrieval and the dashboard.</p>`}
+
+function scrRetrieval(){return `
+  <p class="kicker">n8n · WF3 › Search KB — pgvector similarity search</p>
+  <div class="banner" style="background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.4);color:#93c5fd"><span>🔎</span> 6 chunks retrieved from kb_chunks · filtered to approved_for_customer_use = true</div>
+  <div class="srcs">
+    <div class="src"><div class="top"><span class="ti">UK Study Profile</span><span class="pill g">approved ✓</span></div><div class="sn">Nursing tuition ~£12,000–£20,000; IELTS 6.5–7.0 or OET; clinical placements; NMC registration context…</div><div class="score">cosine 0.34</div></div>
+    <div class="src"><div class="top"><span class="ti">Canada Study Profile</span><span class="pill g">approved ✓</span></div><div class="sn">Nursing tuition ~CAD 20,000–35,000; provincial regulation; study permit + proof of funds…</div><div class="score">cosine 0.31</div></div>
+    <div class="src"><div class="top"><span class="ti">Undergraduate Admission Checklist</span><span class="pill g">approved ✓</span></div><div class="sn">WAEC results, passport, personal statement, English test or plan, proof of funds…</div><div class="score">cosine 0.29</div></div>
+    <div class="src"><div class="top"><span class="ti">IELTS / TOEFL Guidance</span><span class="pill g">approved ✓</span></div><div class="sn">Nursing often needs 7.0 or OET B; you can apply first &amp; submit results later…</div><div class="score">cosine 0.27</div></div>
+    <div class="src"><div class="top"><span class="ti">Postgraduate Admission Checklist</span><span class="pill g">approved ✓</span></div><div class="sn">Degree + transcript, SOP, references, higher English thresholds…</div><div class="score">cosine 0.24</div></div>
+    <div class="src" style="opacity:.55"><div class="top"><span class="ti">Escalation Policy</span><span class="pill r">internal ✕</span></div><div class="sn">Excluded by the approved-only filter — internal staff guidance is never surfaced to customers.</div><div class="score">filtered out</div></div>
+  </div>
+  <p class="tiny muted" style="margin-top:14px">Grounding over invention: the model can only cite approved, dated documents. <span class="hs" data-tip="Embeddings: OpenAI text-embedding-3-small (1536-dim). The internal escalation policy is embedded but excluded at retrieval by the metadata filter."></span></p>`}
+
+function scrReco(){return `
+  <p class="kicker">n8n · WF3 › Draft Recommendation — Claude, grounded in retrieved sources</p>
+  <div class="badges">
+    <span class="bdg no">safe_to_send: false</span>
+    <span class="bdg rev">required_review: true</span>
+    <span class="bdg cf">confidence: 0.45</span>
+    <span class="bdg cf" style="background:rgba(20,184,166,.15);color:#5eead4;border-color:rgba(20,184,166,.4)">5 sources cited</span>
+  </div>
+  <div class="reco">
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:7px">Staff summary</div>
+        <div class="summary">WAEC-qualified applicant seeking undergraduate Nursing in the UK or Canada, ~USD 15,000/yr uncle-sponsored. Key gaps: no IELTS, no specific universities. <b style="color:#fca5a5">Budget is a significant concern</b> — UK Nursing tuition alone is ~£12,000–£20,000 plus living costs; Canada CAD 20,000–35,000 plus living. Nursing carries elevated English requirements and clinical-placement/registration considerations the counsellor must verify.</div>
+      </div>
+      <div class="card">
+        <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:7px">Risk flags (7)</div>
+        <ul class="flags">
+          <li><b>Budget gap</b> — ~USD 15k likely below UK/Canada Nursing costs</li>
+          <li><b>No IELTS</b> — mandatory; a timeline bottleneck</li>
+          <li>Nursing clinical placements — verify per institution</li>
+          <li>NMC (UK) / provincial (Canada) registration — don't promise outcomes</li>
+          <li>WAEC-only entry — confirm science grades meet requirements</li>
+          <li>Visa financial-evidence requirements apply</li>
+          <li>KB lacks specific universities — counsellor to verify</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="email">
+        <div class="ehd"><div class="s">Draft customer message</div><div class="m">generated for counsellor review — not yet sent</div></div>
+        <div class="eb">Dear Adaeze,
+
+Thank you for reaching out! We are excited to support your journey toward studying Nursing abroad.
+
+🇬🇧 UNITED KINGDOM
+Undergraduate Nursing typically starts in September. Tuition is approximately £12,000–£20,000/yr with living costs ~£12,000–£15,000/yr (higher in London). We want to be transparent: these costs may exceed your ~USD 15,000 budget, so we'll explore this together. English: usually IELTS 6.5–7.0 or OET. Nursing involves clinical placements; practice requires NMC registration.
+
+🇨🇦 CANADA
+Multiple intakes. Nursing tuition ~CAD 20,000–35,000/yr plus living ~CAD 12,000–15,000. English: typically IELTS 6.0–6.5+. Nursing is regulated provincially; internationally-educated nurses face additional assessment.
+
+YOUR NEXT STEPS
+1. Book IELTS (or OET) as soon as possible.
+2. Gather WAEC results, passport, birth certificate, sponsor/proof-of-funds letter.
+3. Begin your personal statement.
+4. Have a budget conversation with your sponsor — total costs likely exceed USD 15,000.
+5. Share university preferences so we can shortlist 3–5 programmes.
+
+This guidance is informational only and subject to official requirements. Not a guarantee of admission, a visa, or a scholarship.
+
+Warm regards,
+PathPilot Study Abroad Team</div>
+      </div>
+      <div class="tiny muted" style="margin-top:8px">Plus a 15-item document checklist. <span class="hs" data-tip="The recommendation is saved to the recommendations table as approval_status = pending_review. Nothing reaches the customer until a human approves."></span> Saved as <b>pending_review</b>.</div>
+    </div>
+  </div>`}
+
+function scrApproval(){return `
+  <p class="kicker">Gmail · counsellor inbox (fisayo.dmg@gmail.com)</p>
+  <div class="approval">
+    <div class="top">
+      <div class="from"><div class="av">P</div><div><div style="font-weight:600;font-size:13px">PathPilot Alerts</div><div class="tiny muted">to me · just now</div></div></div>
+      <div class="sub">PathPilot — Review required: Adaeze Okafor (Nursing)</div>
+    </div>
+    <div class="bd">
+      <div class="kv">
+        <span>Lead</span><b>Adaeze Okafor</b>
+        <span>Course</span><span>Nursing · undergraduate</span>
+        <span>Countries</span><span>UK, Canada</span>
+        <span>Budget</span><span>~USD 15,000/yr (uncle-sponsored)</span>
+        <span>Confidence</span><span>0.45</span>
+      </div>
+      <h4>Staff summary</h4>
+      <div class="tiny" style="color:#475569;line-height:1.5">Budget likely below UK/Canada Nursing costs; no IELTS yet; WAEC entry &amp; Nursing registration must be verified. <span class="hs" data-tip="The counsellor sees the AI's reasoning AND every risk flag before deciding — that's the human-in-the-loop control."></span></div>
+      <h4>Draft customer message</h4>
+      <div class="draftbox">Dear Adaeze, Thank you for reaching out! … Tuition may exceed your ~USD 15,000 budget … Book IELTS as soon as possible … This guidance is informational only and subject to official requirements. Not a guarantee of admission, a visa, or a scholarship.</div>
+      <div class="disc">This is an AI-generated draft. Review carefully before approving.</div>
+    </div>
+    <div class="ebtns">
+      <button class="eb-approve" data-advance>✓ Approve &amp; Send <span class="hs act" data-tip="Click to approve. The workflow resumes and sends the customer email." style="filter:invert(1)"></span></button>
+      <button class="eb-decline">Decline</button>
+    </div>
+  </div>`}
+
+function scrApproved(){return `
+  <p class="kicker">n8n · WF4 Human Approval — resumed on counsellor approval</p>
+  <div class="banner"><span>✓</span> Approved by counsellor · customer email sent · lead advanced · follow-up scheduled</div>
+  <div class="pipe">
+    ${node("📧",FRM,"Send Customer Email","Gmail → Adaeze")}${ar}
+    ${node("🗄",PG,"Mark Approved","approval_status = approved")}${ar}
+    ${node("↗",PG,"Update Lead","→ consultation_offered")}${ar}
+    ${node("⏰",PG,"Create Follow-up","due in 2 days")}${ar}
+    ${node("📋",PG,"Audit","approved_and_sent")}
+  </div>
+  <div class="row" style="margin-top:18px">
+    <div class="col card">
+      <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">Customer inbox</div>
+      <div class="tiny" style="color:var(--soft);line-height:1.5"><b style="color:#fff">✓ Delivered</b> — the approved Nursing guidance email is now in Adaeze's inbox, drafted by Claude and approved by a human.</div>
+    </div>
+    <div class="col card">
+      <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">follow_ups · new row</div>
+      <div class="kv tiny"><span>reason</span><span style="color:var(--soft)">Consultation offered — follow up in 2 days</span><span>due_at</span><span style="color:var(--soft)">+2 days</span><span>status</span><span><span class="pill a">pending</span></span></div>
+    </div>
+  </div>
+  <p class="tiny muted" style="margin-top:12px">WF5 runs daily at 08:00 and emails the counsellor when this follow-up comes due. <span class="hs" data-tip="No lead is forgotten — the scheduler picks up every due follow-up automatically."></span></p>`}
+
+function scrDash(){return `
+  <p class="kicker">Supabase · SQL Editor — select * from v_pipeline_metrics</p>
+  <div class="metrics">
+    <div class="metric"><div class="v">12</div><div class="l">total leads</div></div>
+    <div class="metric"><div class="v">7</div><div class="l">qualified</div></div>
+    <div class="metric"><div class="v">6</div><div class="l">recommendations</div></div>
+    <div class="metric"><div class="v">0.8<span style="font-size:13px">m</span></div><div class="l">avg time → reco</div></div>
+  </div>
+  <div class="card">
+    <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:12px">v_lead_pipeline — leads by status</div>
+    <div class="bars">
+      <div class="bar"><span class="lab">consultation_offered</span><div class="track"><div class="fill" style="width:30%"></div></div><span class="vn">3</span></div>
+      <div class="bar"><span class="lab">qualified</span><div class="track"><div class="fill" style="width:40%"></div></div><span class="vn">4</span></div>
+      <div class="bar"><span class="lab">info_needed</span><div class="track"><div class="fill" style="width:30%"></div></div><span class="vn">3</span></div>
+      <div class="bar"><span class="lab">new</span><div class="track"><div class="fill" style="width:10%"></div></div><span class="vn">1</span></div>
+    </div>
+  </div>
+  <p class="tiny muted" style="margin-top:14px">Live SQL views — no data is copied. <span class="hs" data-tip="Adaeze's lead now sits in consultation_offered. These views plug straight into Looker Studio or Metabase in production."></span> Every query reflects the latest state.</p>`}
+
+function scrAudit(){return `
+  <p class="kicker">Supabase · SQL Editor — select * from v_audit_recent</p>
+  <div class="sb">
+    <div class="bar"><span class="gn">audit_logs</span> · the complete trail for this enquiry</div>
+    <div style="overflow:auto"><table class="tbl">
+      <tr><th>ts</th><th>action</th><th>actor_type</th><th>actor</th><th>workflow</th></tr>
+      <tr><td class="mono tiny">10:00:01</td><td>lead.created</td><td><span class="pill b">system</span></td><td>wf1-lead-intake</td><td>WF1</td></tr>
+      <tr><td class="mono tiny">10:00:06</td><td>lead.extracted</td><td><span class="pill v">ai</span></td><td>wf2-extract</td><td>WF2</td></tr>
+      <tr><td class="mono tiny">10:00:43</td><td>recommendation.generated</td><td><span class="pill v">ai</span></td><td>wf3-recommend</td><td>WF3</td></tr>
+      <tr><td class="mono tiny">10:07:12</td><td>recommendation.approved_and_sent</td><td><span class="pill g">staff</span></td><td>wf4-approval</td><td>WF4</td></tr>
+    </table></div>
+  </div>
+  <p class="tiny muted" style="margin-top:14px">Responsible AI in practice — every system, AI, and human action is logged with a timestamp, actor type, and workflow. <span class="hs" data-tip="No black boxes. A human (staff) approved the only customer-facing action."></span></p>`}
+
+function scrClosing(){return `
+  <div class="closing">
+    <p class="kicker">acceptance criteria · all met</p>
+    <div class="big">A raw enquiry → a human-approved plan, in &lt;60s</div>
+    <p class="muted" style="font-size:14px">Lead captured · fields extracted · KB retrieved · recommendation drafted · human approval · response sent · follow-up scheduled · dashboard updated · fully audited.</p>
+    <div class="recap">
+      <div class="it"><b>Responsible AI</b><p>safe_to_send is always false — no message reaches a customer without human approval.</p></div>
+      <div class="it"><b>Grounded</b><p>Guidance is drawn only from approved, dated KB documents. The model can't invent fees or rules.</p></div>
+      <div class="it"><b>Privacy</b><p>Consent captured before processing. No passport scans or bank statements stored.</p></div>
+      <div class="it"><b>Auditable</b><p>Every AI, staff, and system action logged with timestamp and workflow ID.</p></div>
+    </div>
+    <div class="stackrow">
+      <div class="chip"><span class="dot" style="background:#ff6d5a"></span>n8n 2.22.4</div>
+      <div class="chip"><span class="dot" style="background:#d77655"></span>Claude Sonnet 4.6</div>
+      <div class="chip"><span class="dot" style="background:#3ecf8e"></span>Supabase pgvector</div>
+      <div class="chip"><span class="dot" style="background:#10a37f"></span>OpenAI embeddings</div>
+      <div class="chip"><span class="dot" style="background:#ea4335"></span>Gmail</div>
+    </div>
+    <button class="btn primary" id="replay" style="margin-top:8px">↺ Watch again</button>
+  </div>`}
+
+/* ---------- steps ---------- */
+const steps=[
+  {nav:"Welcome", url:"pathpilot · welcome", title:"PathPilot", crit:"", screen:scrIntro,
+   body:"An agentic study-abroad & travel concierge. This interactive walkthrough reconstructs the full journey from real execution data. Use Next → to move through it."},
+  {nav:"Submit enquiry", url:"fisayo-dmg.app.n8n.cloud/form/pathpilot-intake", title:"A customer submits an enquiry", crit:"Lead captured", screen:scrForm,
+   body:"The intake form — WF1's trigger. A prospective Nursing student fills it in. Consent is a hard gate. Click the green hotspot on Submit (or Next) to fire the workflow."},
+  {nav:"Enquiry received", url:"fisayo-dmg.app.n8n.cloud/form/pathpilot-intake", title:"Enquiry received", crit:"", screen:scrThanks,
+   body:"The customer gets an immediate confirmation. Everything from here runs automatically — extraction, retrieval, drafting, approval, and follow-up."},
+  {nav:"Intake (WF1)", url:"fisayo-dmg.app.n8n.cloud/executions · WF1", title:"The intake workflow runs", crit:"n8n receives the enquiry", screen:scrWF1,
+   body:"WF1 checks consent, normalises the data, upserts the lead into Supabase (dedup on email), writes an audit entry, then calls WF2 — all in about 1.4 seconds."},
+  {nav:"Extraction (WF2)", url:"fisayo-dmg.app.n8n.cloud/executions · WF2", title:"Claude extracts structured data", crit:"≥85% extraction · intent correct", screen:scrWF2,
+   body:"From one natural-language message, Claude produced this strict JSON — 7+ fields plus intent classification, a lead score, and 0.95 confidence, in about 4 seconds."},
+  {nav:"Lead stored", url:"supabase.com · Table Editor › leads", title:"The lead is stored", crit:"Lead stored in CRM", screen:scrLead,
+   body:"The structured fields are now a queryable row in Postgres — the operational record that drives retrieval, the dashboard, and follow-ups."},
+  {nav:"Knowledge retrieval", url:"fisayo-dmg.app.n8n.cloud/executions · WF3", title:"Relevant guidance is retrieved", crit:"Approved KB retrieved", screen:scrRetrieval,
+   body:"WF3 runs a pgvector similarity search over 12 curated documents and returns the 6 most relevant chunks — filtered to approved-for-customer-use only. The internal escalation policy is excluded."},
+  {nav:"Recommendation", url:"fisayo-dmg.app.n8n.cloud/executions · WF3", title:"Claude drafts the recommendation", crit:"Recommendation from sources · review required", screen:scrReco,
+   body:"Grounded in those sources, Claude drafts a staff summary, a full customer email, a 15-item checklist, and 7 risk flags — and marks it safe_to_send: false. It cannot reach the customer without approval."},
+  {nav:"Counsellor review", url:"mail.google.com · PathPilot review", title:"The counsellor reviews by email", crit:"Human review step", screen:scrApproval,
+   body:"WF4 emails the counsellor the lead profile, the AI's reasoning with every risk flag, and the exact draft — with Approve & Send / Decline buttons. Click Approve & Send (green hotspot) to continue."},
+  {nav:"Approved & sent", url:"fisayo-dmg.app.n8n.cloud/executions · WF4", title:"Approved — response sent", crit:"Approved response sent · follow-up created", screen:scrApproved,
+   body:"On approval the workflow resumes: it sends the customer email, marks the recommendation approved, advances the lead to consultation_offered, and schedules a 2-day follow-up — one click, five actions."},
+  {nav:"Dashboard", url:"supabase.com · SQL Editor", title:"The dashboard reflects the lead", crit:"Dashboard reflects status", screen:scrDash,
+   body:"Live Supabase views aggregate the pipeline — totals, qualified leads, recommendations, and average time-to-recommendation (under a minute). Adaeze's lead now shows as consultation_offered."},
+  {nav:"Audit trail", url:"supabase.com · SQL Editor › v_audit_recent", title:"Everything is audited", crit:"Audit log created", screen:scrAudit,
+   body:"The complete trail: created by the system, extracted and recommended by AI, approved and sent by a human. Timestamps, actor types, workflow IDs — full auditability."},
+  {nav:"Summary", url:"pathpilot · summary", title:"That's PathPilot", crit:"", screen:scrClosing,
+   body:"End to end: enquiry → structured lead → grounded recommendation → human approval → sent response → scheduled follow-up, with every decision logged. Thanks for exploring."}
+];
+
+/* ---------- engine ---------- */
+let cur=0;
+const $=id=>document.getElementById(id);
+const snav=$("snav");
+steps.forEach((s,i)=>{
+  const b=document.createElement("button");
+  b.innerHTML=`<span class="num">${i===0?'•':i}</span><span>${s.nav}</span>`;
+  b.onclick=()=>go(i);
+  snav.appendChild(b);
+});
+function render(){
+  const s=steps[cur];
+  $("screen").innerHTML=s.screen();
+  $("url").textContent=s.url;
+  $("ntitle").textContent=s.title;
+  $("nbody").textContent=s.body;
+  const c=$("ncrit");
+  if(s.crit){c.style.display="";c.textContent="✓ "+s.crit}else{c.style.display="none"}
+  $("counter").textContent=`Step ${cur+1} / ${steps.length}`;
+  $("prev").disabled=cur===0;
+  $("next").disabled=cur===steps.length-1;
+  [...snav.children].forEach((b,i)=>{b.classList.toggle("active",i===cur);b.classList.toggle("done",i<cur)});
+  // wire hotspots & action buttons
+  $("screen").querySelectorAll("[data-advance]").forEach(el=>el.addEventListener("click",e=>{e.preventDefault();next()}));
+  const rp=$("replay"); if(rp) rp.onclick=()=>go(0);
+  $("screen").scrollTop=0;
+}
+function go(i){cur=Math.max(0,Math.min(steps.length-1,i));render()}
+function next(){if(cur<steps.length-1)go(cur+1)}
+function prev(){if(cur>0)go(cur-1)}
+$("next").onclick=next; $("prev").onclick=prev; $("restart").onclick=()=>go(0);
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")next();
+  else if(e.key==="ArrowLeft")prev();
+});
+render();
+</script>
+</body>
+</html>

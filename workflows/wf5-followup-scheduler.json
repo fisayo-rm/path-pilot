@@ -1,0 +1,20 @@
+{
+  "id": "evlljAoRfXtUdsyG",
+  "name": "PathPilot — WF5 Follow-up Scheduler",
+  "active": true,
+  "description": "Phase 5. Runs daily at 8am: queries follow_ups WHERE status=pending AND due_at<=NOW(), sends a counsellor reminder email per due item via Gmail, marks each done, audits. Handles new lead (24h), consultation offered (2d), missing docs (3d), dormant (14d) follow-ups.",
+  "settings": { "executionOrder": "v1", "availableInMCP": true },
+  "nodes": [
+    { "id": "dc38abaf-e2c9-4513-a38a-da4320c0ae05", "name": "Daily Follow-up Check", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.3, "position": [240, 400], "parameters": { "rule": { "interval": [{ "field": "days", "daysInterval": 1, "triggerAtHour": 8, "triggerAtMinute": 0 }] } } },
+    { "id": "de351d44-20a1-4bed-955f-bb81cfa74f6a", "name": "Get Due Follow-ups", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [460, 400], "parameters": { "resource": "database", "operation": "executeQuery", "query": "SELECT f.id AS followup_id, f.lead_id, f.reason, f.due_at, l.name AS lead_name, l.email AS lead_email, l.desired_course, l.status AS lead_status FROM follow_ups f JOIN leads l ON f.lead_id = l.id WHERE f.status = 'pending' AND f.due_at <= NOW() ORDER BY f.due_at ASC LIMIT 50", "options": {} } },
+    { "id": "31df2861-6720-4054-8cc0-3002368f5def", "name": "Send Follow-up Reminder", "type": "n8n-nodes-base.gmail", "typeVersion": 2.2, "position": [700, 400], "webhookId": "17dc3b35-a413-4eba-a5dd-4f1253cab93b", "parameters": { "resource": "message", "operation": "send", "sendTo": "aikomofisayo@gmail.com", "subject": "={{ \"PathPilot — Follow-up due: \" + $json.lead_name + \" (\" + $json.desired_course + \")\" }}", "emailType": "html", "message": "=<h3>Follow-up Reminder</h3><p><strong>Lead:</strong> {{ $json.lead_name }}</p><p><strong>Email:</strong> {{ $json.lead_email }}</p><p><strong>Course:</strong> {{ $json.desired_course }}</p><p><strong>Lead status:</strong> {{ $json.lead_status }}</p><p><strong>Reason:</strong> {{ $json.reason }}</p><p><strong>Was due:</strong> {{ $json.due_at }}</p><p>Please follow up with this lead today.</p>", "options": { "appendAttribution": false, "senderName": "PathPilot Team" } } },
+    { "id": "98f888f8-3833-4d1b-b599-74dbec132d64", "name": "Mark Follow-up Done", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [940, 400], "parameters": { "resource": "database", "operation": "executeQuery", "query": "UPDATE follow_ups SET status = 'done', completed_at = NOW() WHERE id = $1", "options": { "queryReplacement": "={{ $('Get Due Follow-ups').item.json.followup_id }}" } } },
+    { "id": "c61bbdd7-3523-4d1d-abdd-9b93d8cc968b", "name": "Audit: Follow-up Sent", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [1160, 400], "parameters": { "resource": "database", "operation": "insert", "schema": { "__rl": true, "mode": "list", "value": "public" }, "table": { "__rl": true, "mode": "list", "value": "audit_logs" }, "columns": { "mappingMode": "defineBelow", "value": { "actor_type": "system", "actor_id": "wf5-followup", "action": "followup.reminder_sent", "lead_id": "={{ $('Get Due Follow-ups').item.json.lead_id }}", "workflow_id": "={{ $workflow.id }}" }, "matchingColumns": [], "schema": [] }, "options": {} } }
+  ],
+  "connections": {
+    "Daily Follow-up Check": { "main": [[{ "node": "Get Due Follow-ups", "type": "main", "index": 0 }]] },
+    "Get Due Follow-ups": { "main": [[{ "node": "Send Follow-up Reminder", "type": "main", "index": 0 }]] },
+    "Send Follow-up Reminder": { "main": [[{ "node": "Mark Follow-up Done", "type": "main", "index": 0 }]] },
+    "Mark Follow-up Done": { "main": [[{ "node": "Audit: Follow-up Sent", "type": "main", "index": 0 }]] }
+  }
+}
