@@ -235,6 +235,7 @@ body{
     </div>
     <div class="tag">Interactive Walkthrough · agentic study-abroad &amp; travel workflows</div>
     <div class="right">
+      <a id="ctaConsole" href="#" target="_blank" rel="noreferrer" style="background:linear-gradient(90deg,#2563eb,#0ea5e9);color:#fff;font-weight:700;font-size:12.5px;padding:7px 13px;border-radius:8px;text-decoration:none">▶ Live console</a>
       <div class="counter" id="counter">Step 1 / 13</div>
       <button class="restart" id="restart">↺ Restart</button>
     </div>
@@ -267,6 +268,10 @@ body{
 </div>
 
 <script>
+/* Live console URL — replace with your deployed Vercel URL. */
+const CONSOLE_URL = "https://pathpilot-demo-console.vercel.app";
+(function(){ var c = document.getElementById('ctaConsole'); if (c) c.href = CONSOLE_URL; })();
+
 /* ---------- screen builders (use real PathPilot data) ---------- */
 function scrIntro(){return `
   <div class="intro">
@@ -281,7 +286,8 @@ function scrIntro(){return `
       <div class="chip"><span class="dot" style="background:#ea4335"></span>Gmail</div>
     </div>
     <div class="flowmini"><b>WF1</b> intake <span class="ar">→</span> <b>WF2</b> extract <span class="ar">→</span> <b>WF3</b> recommend <span class="ar">→</span> <b>WF4</b> approve <span class="ar">→</span> <b>WF5</b> follow-up</div>
-    <p class="tiny muted" style="margin-top:22px">This is a faithful reconstruction built from real execution data. Use <b>Next →</b> (or → key) and click the pulsing <span class="hs" data-tip="Pulsing dots are hotspots. Blue = info on hover, green = a click that advances the demo."></span> hotspots.</p>
+    <p style="margin-top:18px"><span style="font-size:11px;font-weight:700;color:#0b1020;background:#f59e0b;padding:4px 10px;border-radius:999px">⚠ Synthetic sample data — no real customers; KB figures indicative only</span></p>
+    <p class="tiny muted" style="margin-top:14px">This is a faithful reconstruction built from real execution data. Use <b>Next →</b> (or → key) and click the pulsing <span class="hs" data-tip="Pulsing dots are hotspots. Blue = info on hover, green = a click that advances the demo."></span> hotspots.</p>
   </div>`}
 
 function scrForm(){return `
@@ -537,7 +543,10 @@ function scrClosing(){return `
       <div class="chip"><span class="dot" style="background:#10a37f"></span>OpenAI embeddings</div>
       <div class="chip"><span class="dot" style="background:#ea4335"></span>Gmail</div>
     </div>
-    <button class="btn primary" id="replay" style="margin-top:8px">↺ Watch again</button>
+    <div style="margin-top:8px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a class="btn primary" href="${CONSOLE_URL}" target="_blank" rel="noreferrer" style="text-decoration:none;display:inline-flex;align-items:center">▶ Try it live — open the console</a>
+      <button class="btn" id="replay">↺ Watch again</button>
+    </div>
   </div>`}
 
 /* ---------- steps ---------- */

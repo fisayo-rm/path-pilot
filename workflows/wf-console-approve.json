@@ -1,0 +1,26 @@
+{
+  "id": "7rDVWPMas5Xwy5ls",
+  "name": "PathPilot — WF-Console Approve",
+  "active": true,
+  "description": "Console one-click approval (POST /webhook/console-approve, recommendation_id): send customer email, mark approved, advance lead to consultation_offered, create 2-day follow-up, audit. WF4 approve-branch without the Gmail wait (the console click is the approval). Customer email is routed to the operator inbox for the synthetic demo.",
+  "settings": { "executionOrder": "v1", "availableInMCP": true },
+  "meta": { "aiBuilderAssisted": true, "builderVariant": "mcp" },
+  "tags": [],
+  "nodes": [
+    { "id": "0c1dfee1-6c2f-4827-b44a-5ae8d55be56a", "name": "Console Approve Webhook", "type": "n8n-nodes-base.webhook", "typeVersion": 2.1, "position": [240, 400], "webhookId": "817f6911-081b-4d39-a283-12b46c13c122", "parameters": { "httpMethod": "POST", "path": "console-approve", "responseMode": "onReceived", "options": { "responseData": "{ \"status\": \"received\" }" } } },
+    { "id": "7473a58b-af39-49ea-a542-8bb5a775536c", "name": "Get Recommendation", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [460, 400], "parameters": { "resource": "database", "operation": "executeQuery", "query": "SELECT r.*, l.name AS lead_name, l.email AS lead_email, l.desired_course, l.preferred_countries, l.budget_range, l.lead_score FROM recommendations r JOIN leads l ON r.lead_id = l.id WHERE r.id = $1 LIMIT 1", "options": { "queryReplacement": "={{ $json.body.recommendation_id }}" } } },
+    { "id": "588833fd-0d35-434c-bed4-add2d3493c54", "name": "Send Customer Email", "type": "n8n-nodes-base.gmail", "typeVersion": 2.2, "position": [680, 400], "webhookId": "56af5fa3-2916-4b42-b2d0-9898f8486b34", "parameters": { "resource": "message", "operation": "send", "sendTo": "fisayo.dmg@gmail.com", "subject": "=Your Study Abroad / Travel Enquiry — Next Steps ({{ $('Get Recommendation').item.json.desired_course }})", "emailType": "html", "message": "={{ $('Get Recommendation').item.json.customer_draft.replace(/\\n/g, '<br>') }}", "options": { "appendAttribution": false, "senderName": "PathPilot Team" } } },
+    { "id": "ba529462-ef69-48d7-96b5-8eb48d714b16", "name": "Mark Approved", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [900, 400], "parameters": { "resource": "database", "operation": "executeQuery", "query": "UPDATE recommendations SET approval_status = 'approved', approved_at = NOW(), final_message_sent = true WHERE id = $1", "options": { "queryReplacement": "={{ $('Get Recommendation').item.json.id }}" } } },
+    { "id": "bdb873c3-3a8d-4dbb-a8b2-afd3e5d723b9", "name": "Update Lead Status", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [1120, 400], "parameters": { "resource": "database", "operation": "executeQuery", "query": "UPDATE leads SET status = 'consultation_offered', last_contacted_at = NOW() WHERE id = $1", "options": { "queryReplacement": "={{ $('Get Recommendation').item.json.lead_id }}" } } },
+    { "id": "26c5e825-4365-4edb-b1bd-f244eeef6e06", "name": "Create Follow-up", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [1340, 400], "parameters": { "resource": "database", "operation": "insert", "schema": { "__rl": true, "mode": "list", "value": "public" }, "table": { "__rl": true, "mode": "list", "value": "follow_ups" }, "columns": { "mappingMode": "defineBelow", "value": { "lead_id": "={{ $('Get Recommendation').item.json.lead_id }}", "due_at": "={{ $now.plus(2, 'days').toISO() }}", "reason": "Consultation offered — follow up in 2 days", "status": "pending" }, "matchingColumns": [], "schema": [] }, "options": {} } },
+    { "id": "b7e3c55b-c666-476e-89f7-493833d5d87c", "name": "Audit: Approved & Sent", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [1560, 400], "parameters": { "resource": "database", "operation": "insert", "schema": { "__rl": true, "mode": "list", "value": "public" }, "table": { "__rl": true, "mode": "list", "value": "audit_logs" }, "columns": { "mappingMode": "defineBelow", "value": { "actor_type": "staff", "actor_id": "wf-console-approve", "action": "recommendation.approved_and_sent", "lead_id": "={{ $('Get Recommendation').item.json.lead_id }}", "workflow_id": "={{ $workflow.id }}" }, "matchingColumns": [], "schema": [] }, "options": {} } }
+  ],
+  "connections": {
+    "Console Approve Webhook": { "main": [[{ "node": "Get Recommendation", "type": "main", "index": 0 }]] },
+    "Get Recommendation": { "main": [[{ "node": "Send Customer Email", "type": "main", "index": 0 }]] },
+    "Send Customer Email": { "main": [[{ "node": "Mark Approved", "type": "main", "index": 0 }]] },
+    "Mark Approved": { "main": [[{ "node": "Update Lead Status", "type": "main", "index": 0 }]] },
+    "Update Lead Status": { "main": [[{ "node": "Create Follow-up", "type": "main", "index": 0 }]] },
+    "Create Follow-up": { "main": [[{ "node": "Audit: Approved & Sent", "type": "main", "index": 0 }]] }
+  }
+}

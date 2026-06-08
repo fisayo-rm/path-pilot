@@ -1,9 +1,9 @@
 {
   "id": "fCKmY6J4GYQHhyEl",
   "name": "PathPilot — WF1 Lead Intake",
-  "active": false,
-  "description": "Phase 1 + dedup. Hosted intake form with consent gate → normalise → upsert lead (dedup on email) + audit → Call WF2 (extract/classify) → completion. Consent-denied path is audited and shown a notice.",
-  "settings": { "executionOrder": "v1", "availableInMCP": true },
+  "active": true,
+  "description": "Phase 1 + dedup, dual-trigger. Intake via EITHER the hosted form OR a JSON webhook (POST /webhook/console-intake, used by the demo console). 'Adapt Webhook Input' reshapes the webhook body into the form's field shape so both paths share: Normalise → consent gate → upsert lead (dedup on email) + audit → Call WF2 (extract/classify). The form responds via the trigger's built-in 'form submitted' text; completion nodes were removed so the webhook path never hits a form-only node. The webhook acks immediately and the console polls Supabase by email.",
+  "settings": { "executionOrder": "v1", "availableInMCP": true, "binaryMode": "separate", "timeSavedMode": "fixed", "errorWorkflow": "Sxtfdv2FS8avBTvk", "callerPolicy": "workflowsFromSameOwner" },
   "meta": { "aiBuilderAssisted": true, "builderVariant": "mcp" },
   "tags": [],
   "nodes": [
@@ -28,7 +28,42 @@
             { "fieldName": "consent", "fieldLabel": "Consent to processing", "fieldType": "dropdown", "requiredField": true, "fieldOptions": { "values": [ { "option": "Yes, I consent" }, { "option": "No, I do not consent" } ] } }
           ]
         },
-        "options": { "buttonLabel": "Submit enquiry", "path": "pathpilot-intake", "appendAttribution": false }
+        "options": {
+          "buttonLabel": "Submit enquiry",
+          "path": "pathpilot-intake",
+          "appendAttribution": false,
+          "respondWithOptions": { "values": { "respondWith": "text", "formSubmittedText": "Thank you — your submission has been received. If you consented to processing, a counsellor will follow up within 24 hours. Guidance is informational only and not a guarantee of admission, a visa, or a scholarship." } }
+        }
+      }
+    },
+    {
+      "id": "5253d5b8-305f-4c25-9fcd-5c9a7bcb7f5f",
+      "name": "Console Intake Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [240, 640],
+      "webhookId": "248fd047-0115-48fe-b42d-f8c1e72d1de2",
+      "parameters": { "httpMethod": "POST", "path": "console-intake", "responseMode": "onReceived", "options": { "responseData": "{ \"status\": \"received\" }" } }
+    },
+    {
+      "id": "4e928c00-70db-4837-8879-731d7745585a",
+      "name": "Adapt Webhook Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 640],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            { "id": "w1", "name": "fullName", "value": "={{ $json.body.name ?? $json.body.fullName ?? \"\" }}", "type": "string" },
+            { "id": "w2", "name": "email", "value": "={{ $json.body.email ?? \"\" }}", "type": "string" },
+            { "id": "w3", "name": "phone", "value": "={{ $json.body.phone ?? \"\" }}", "type": "string" },
+            { "id": "w4", "name": "primaryInterest", "value": "={{ $json.body.interest ?? \"Other\" }}", "type": "string" },
+            { "id": "w5", "name": "message", "value": "={{ $json.body.message ?? \"\" }}", "type": "string" },
+            { "id": "w6", "name": "consent", "value": "={{ ($json.body.consent === true || String($json.body.consent ?? \"\").toLowerCase().includes(\"yes\")) ? \"Yes, I consent\" : \"No, I do not consent\" }}", "type": "string" }
+          ]
+        }
       }
     },
     {
@@ -135,20 +170,6 @@
       }
     },
     {
-      "id": "78712c14-43c5-4252-b800-665decd86e8a",
-      "name": "Completion - Received",
-      "type": "n8n-nodes-base.form",
-      "typeVersion": 2.5,
-      "position": [1520, 260],
-      "webhookId": "0b856e70-0b73-4943-85eb-a67899eee38f",
-      "parameters": {
-        "operation": "completion",
-        "respondWith": "text",
-        "completionTitle": "Thank you — we've received your enquiry",
-        "completionMessage": "A counsellor will review your details and follow up within 24 hours. This guidance is informational only and not a guarantee of admission, a visa, or a scholarship."
-      }
-    },
-    {
       "id": "4b9b37f4-7c01-4324-a3dc-a438dea5be01",
       "name": "Audit: Consent Denied",
       "type": "n8n-nodes-base.postgres",
@@ -167,29 +188,15 @@
         },
         "options": {}
       }
-    },
-    {
-      "id": "beaeae99-2dc8-4d93-a12d-236d5078a825",
-      "name": "Completion - Consent Required",
-      "type": "n8n-nodes-base.form",
-      "typeVersion": 2.5,
-      "position": [1120, 560],
-      "webhookId": "bf32e0aa-0787-457f-afa9-2fc05291c39a",
-      "parameters": {
-        "operation": "completion",
-        "respondWith": "text",
-        "completionTitle": "We can't proceed without your consent",
-        "completionMessage": "We can only process your enquiry if you consent to us using your details to respond. If you change your mind, please submit the form again and choose the consent option."
-      }
     }
   ],
   "connections": {
     "Lead Intake Form": { "main": [[{ "node": "Normalise Enquiry", "type": "main", "index": 0 }]] },
+    "Console Intake Webhook": { "main": [[{ "node": "Adapt Webhook Input", "type": "main", "index": 0 }]] },
+    "Adapt Webhook Input": { "main": [[{ "node": "Normalise Enquiry", "type": "main", "index": 0 }]] },
     "Normalise Enquiry": { "main": [[{ "node": "Consent Given?", "type": "main", "index": 0 }]] },
     "Consent Given?": { "main": [[{ "node": "Store Lead", "type": "main", "index": 0 }], [{ "node": "Audit: Consent Denied", "type": "main", "index": 0 }]] },
     "Store Lead": { "main": [[{ "node": "Audit: Lead Created", "type": "main", "index": 0 }]] },
-    "Audit: Lead Created": { "main": [[{ "node": "Call WF2 — Extract & Classify", "type": "main", "index": 0 }]] },
-    "Call WF2 — Extract & Classify": { "main": [[{ "node": "Completion - Received", "type": "main", "index": 0 }]] },
-    "Audit: Consent Denied": { "main": [[{ "node": "Completion - Consent Required", "type": "main", "index": 0 }]] }
+    "Audit: Lead Created": { "main": [[{ "node": "Call WF2 — Extract & Classify", "type": "main", "index": 0 }]] }
   }
 }
