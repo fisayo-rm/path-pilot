@@ -1,82 +1,41 @@
 # PathPilot
 
-**AI-guided study-abroad and travel workflows for service teams.**
+**An agentic study-abroad & travel concierge** that turns a raw customer enquiry into a
+human-approved, source-grounded plan — built on n8n, Claude, and Supabase for a Nigerian
+study-abroad/travel agency.
 
-PathPilot is an agentic **n8n** workflow prototype for a Nigerian study-abroad/travel agency
-(Dextravl-like). It turns a raw customer enquiry into a structured lead → intent
-classification → RAG-grounded recommendation → **human approval** → emailed response →
-follow-up task → audit log + dashboard. The LLM reasons and drafts; humans approve anything
-customer-facing.
+## Try it
 
-## 🔗 Interactive walkthrough
+- ▶ **Live console** — triggers the real workflows and proves each step against the live database:
+  **https://pathpilot-demo-console.vercel.app**
+- 🎬 **Interactive walkthrough** — a narrated, no-setup tour of the full journey (with a button into the live console):
+  **https://fisayo-rm.github.io/path-pilot/demo**
 
-A self-contained, clickable reconstruction of the full demo (real execution data, step
-navigation, hotspots, narration) lives at [`demo/index.html`](demo/index.html). Published via
-**GitHub Pages** (Settings → Pages → deploy from branch → **root**):
+Both run on **synthetic sample data** — no real customers.
 
-**→ https://fisayo-rm.github.io/path-pilot/demo**
+## What it does
 
-## Status
+A customer enquiry flows through an agentic pipeline, with a human gate before anything reaches a customer:
 
-| Phase | Status |
-|---|---|
-| **Phase 0 — Discovery & scope lock** | ✅ Complete |
-| **Phase 1 — Foundations** | ✅ Complete (Supabase schema, WF1 intake, prompts) |
-| **Phase 2 — Extraction & classification** | ✅ Complete (WF2, 8/8 classification — [`phase-2/results.md`](phase-2/results.md)) |
-| **Phase 3+4 — RAG & recommendation** | ✅ Complete (WF3+WF7, KB ingested, recommendations generated — [`phase-3-4/results.md`](phase-3-4/results.md)) |
-| **Phase 5 — Human approval & follow-up** | ✅ Complete (WF4 Gmail sendAndWait, WF5 scheduler — [`phase-5/results.md`](phase-5/results.md)) |
-| **Phase 6 — Dashboard & demo prep** | ✅ Complete (Supabase views, WF8, demo script — [`phase-6/`](phase-6/)) |
+1. **Intake** — a web form (or webhook) captures the enquiry behind a consent gate.
+2. **Extract & classify** — Claude turns free text into structured fields, a service intent, and a 0–100 lead score.
+3. **Recommend** — for a qualified lead, a similarity search over an approved knowledge base (pgvector) grounds a drafted staff summary and customer message — flagged `safe_to_send: false`.
+4. **Human approval** — a counsellor approves or declines; only on approval is the customer email sent.
+5. **Follow-up & dashboard** — a follow-up task is scheduled and pipeline metrics update.
+6. **Audit** — every system, AI, and staff action is appended to an immutable log.
 
-## Locked stack (Phase 0)
+The model reasons and drafts; **humans approve anything customer-facing**, and guidance is drawn
+only from approved, dated sources — never invented.
 
-n8n Cloud · **Claude (Anthropic)** reasoning · **Supabase (Postgres + pgvector)** data & RAG ·
-OpenAI `text-embedding-3-small` embeddings *(default, confirm in Phase 3)* · **Gmail** for
-customer email · web-form intake. Full rationale: [`phase-0/00-scope-lock.md`](phase-0/00-scope-lock.md).
+## Stack
 
-## Repository map
+**n8n** (orchestration) · **Claude / Anthropic** (reasoning) · **Supabase** Postgres + **pgvector**
+(data & retrieval) · **OpenAI** embeddings · **Gmail** (customer email).
 
-```
-PathPilot_PRD.md                     Product requirements
-PathPilot_Roadmap.md                 6-week phased plan
-PathPilot_Technical_Architecture.md  Architecture, workflows, data model
+## In this repo
 
-phase-0/
-  00-scope-lock.md                   ⭐ Master Phase 0 decisions, scope, demo, metrics
-  01-workflow-map.md                 End-to-end flow + 8 n8n workflows + phases
-  02-risk-safeguard-checklist.md     Risks, safeguards, privacy/consent, responsible-AI
+- [`workflows/`](workflows/) — the n8n workflow definitions as version-controlled JSON, importable into n8n.
+- [`demo/index.html`](demo/index.html) — the source of the interactive walkthrough.
 
-knowledge-base/
-  README.md                          KB outline, metadata schema, governance, index
-  countries/                         UK · Canada · Malta · Finland study profiles
-  checklists/                        Undergraduate · Postgraduate · UK visit-visa
-  guidance/                          IELTS/TOEFL · Budget planning
-  service/                           Service packages · Escalation policy (internal)
-  faq/                               General FAQ
-
-sample-data/
-  sample-enquiries.md                10 labelled test enquiries (human-readable)
-  sample-enquiries.json              Same, machine-readable with ground-truth labels
-
-db/
-  schema.sql                         Supabase schema (7 tables + pgvector preview + seed)
-
-prompts/                             Versioned Claude prompts (system, extraction, missing-info)
-
-workflows/
-  wf1-lead-intake.json               WF1 — intake + consent + dedup → Call WF2
-  wf2-extract-classify.json          WF2 — Claude extract/classify → update lead
-
-phase-2/
-  results.md                         Phase 2 test results (8/8 classification)
-```
-
-## The demo (hero scenario)
-
-A prospective Nursing undergraduate in Ibadan, WAEC results, no IELTS, limited budget,
-undecided between UK/Canada/Malta/Finland. PathPilot extracts the details, asks for what's
-missing, retrieves approved country + admission + IELTS guidance, drafts a next-step plan,
-routes it to a counsellor, sends the approved email, and schedules a follow-up — all logged.
-
-> ⚠️ Prototype using **synthetic sample data**. Knowledge-base figures are indicative only
-> and must be verified against official sources. No real customer data; test data is deleted
-> after evaluation.
+> ⚠️ Prototype on synthetic data. Knowledge-base figures are indicative only and must be verified
+> against official sources. Not a guarantee of admission, a visa, or a scholarship.
