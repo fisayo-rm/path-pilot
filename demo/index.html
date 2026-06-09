@@ -42,7 +42,8 @@ body{
 .snav button{display:flex;align-items:center;gap:10px;text-align:left;background:transparent;border:0;color:var(--soft);padding:8px 10px;border-radius:9px;cursor:pointer;font-size:13px;line-height:1.25;width:100%}
 .snav button:hover{background:var(--panel2)}
 .snav button.active{background:linear-gradient(90deg,rgba(37,99,235,.25),rgba(14,165,233,.08));color:#fff;box-shadow:inset 2px 0 0 var(--brand2)}
-.snav .num{flex:0 0 22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:11px;color:var(--muted)}
+.snav .num{flex:0 0 22px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-size:11px;color:var(--muted)}
+.snav .lbl{flex:1;min-width:0;overflow-wrap:break-word}
 .snav button.active .num{background:var(--brand);border-color:var(--brand);color:#fff}
 .snav button.done .num{background:var(--green);border-color:var(--green);color:#06210f}
 
@@ -120,7 +121,7 @@ body{
 .thanks p{color:#475569;font-size:14px;line-height:1.6;margin:0}
 
 /* pipeline */
-.pipe{display:flex;flex-wrap:wrap;gap:0 0;align-items:stretch}
+.pipe{display:flex;flex-wrap:wrap;gap:14px 0;align-items:stretch}
 .node{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;display:flex;align-items:center;gap:10px;min-width:0;position:relative}
 .node .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;font-size:15px}
 .node .nm{font-size:12.5px;font-weight:600;line-height:1.2}
@@ -133,9 +134,9 @@ body{
 /* json */
 .jsonbox{background:#020617;border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;line-height:1.65;overflow:auto}
 .j-k{color:#7dd3fc}.j-s{color:#86efac}.j-n{color:#fca5a5}.j-b{color:#fcd34d}.j-p{color:#64748b}
-.statline{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:12.5px}
-.stat b{color:#fff;font-size:15px;display:block}
+.statline{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.stat{display:inline-flex;align-items:baseline;gap:6px;background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-size:11.5px;color:var(--muted)}
+.stat b{color:var(--soft);font-size:12.5px;font-weight:700}
 
 /* supabase table */
 .sb{background:#0c1322;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -285,7 +286,7 @@ function scrIntro(){return `
       <div class="chip"><span class="dot" style="background:#10a37f"></span>OpenAI embeddings</div>
       <div class="chip"><span class="dot" style="background:#ea4335"></span>Gmail</div>
     </div>
-    <div class="flowmini"><b>WF1</b> intake <span class="ar">→</span> <b>WF2</b> extract <span class="ar">→</span> <b>WF3</b> recommend <span class="ar">→</span> <b>WF4</b> approve <span class="ar">→</span> <b>WF5</b> follow-up</div>
+    <div class="flowmini"><b>Intake</b> <span class="ar">→</span> <b>Extract</b> <span class="ar">→</span> <b>Recommend</b> <span class="ar">→</span> <b>Approve</b> <span class="ar">→</span> <b>Follow-up</b></div>
     <p style="margin-top:18px"><span style="font-size:11px;font-weight:700;color:#0b1020;background:#f59e0b;padding:4px 10px;border-radius:999px">⚠ Synthetic sample data — no real customers; KB figures indicative only</span></p>
     <p class="tiny muted" style="margin-top:14px">This is a faithful reconstruction built from real execution data. Use <b>Next →</b> (or → key) and click the pulsing <span class="hs" data-tip="Pulsing dots are hotspots. Blue = info on hover, green = a click that advances the demo."></span> hotspots.</p>
   </div>`}
@@ -300,8 +301,8 @@ function scrForm(){return `
       <div class="fld"><label>Phone or WhatsApp Number</label><div class="inp">+234 803 000 1240</div></div>
       <div class="fld"><label>How can we help? <span class="req">*</span></label><div class="inp sel">Study Abroad <span class="muted">▾</span></div></div>
       <div class="fld"><label>Tell us about your goal <span class="req">*</span></label><textarea class="inp" readonly>I want to study Nursing in the UK or Canada. I have WAEC, no IELTS yet, and I want to start in 2027. My uncle will sponsor me with a budget of around 15,000 USD per year. I have a valid passport.</textarea></div>
-      <div class="fld"><label>Consent to processing <span class="req">*</span> <span class="hs" data-tip="Hard gate: no data is processed without explicit consent. WF1 routes a 'No' to a polite stop."></span></label><div class="inp sel yes">Yes, I consent <span>▾</span></div></div>
-      <button class="submitbtn" data-advance>Submit enquiry &nbsp;<span class="hs act" data-tip="Click to submit — this fires the WF1 webhook." style="filter:invert(1)"></span></button>
+      <div class="fld"><label>Consent to processing <span class="req">*</span> <span class="hs" data-tip="Hard gate: no data is processed without explicit consent. The workflow routes a 'No' to a polite stop."></span></label><div class="inp sel yes">Yes, I consent <span>▾</span></div></div>
+      <button class="submitbtn" data-advance>Submit enquiry &nbsp;<span class="hs act" data-tip="Click to submit — this fires the intake workflow." style="filter:invert(1)"></span></button>
     </div>
   </div>`}
 
@@ -318,26 +319,26 @@ const PG={bg:"rgba(62,207,142,.15)",fg:"#3ecf8e"}, AI={bg:"rgba(216,118,85,.18)"
 const ar=`<span class="arrow">→</span>`;
 
 function scrWF1(){return `
-  <p class="kicker">n8n · WF1 Lead Intake — execution succeeded</p>
-  <div class="banner"><span>✓</span> Lead upserted &amp; logged in 1.4s · consent verified · WF2 invoked</div>
+  <p class="kicker">n8n · Lead Intake — execution succeeded</p>
+  <div class="banner"><span>✓</span> Lead saved &amp; logged in 1.4s · consent verified · classification invoked</div>
   <div class="pipe">
     ${node("📝",FRM,"Lead Intake Form","form trigger")}${ar}
     ${node("✦",NB,"Normalise Enquiry","email · consent · channel")}${ar}
     ${node("◆",NB,"Consent Given?","IF","<span class='hs' data-tip='The consent gate. \"No\" routes to a polite stop and is audited; nothing else runs.' style='position:absolute;top:-9px;left:-9px'></span>")}${ar}
     ${node("🗄",PG,"Store Lead","upsert on email")}${ar}
     ${node("📋",PG,"Audit: Lead Created","audit_logs")}${ar}
-    ${node("⇲",NB,"Call WF2","extract &amp; classify","<span class='hs' data-tip='Hands off to WF2 with the new lead_id — the chain continues automatically.' style='position:absolute;top:-9px;right:-9px'></span>")}${ar}
+    ${node("⇲",NB,"Extract &amp; Classify","next step","<span class='hs' data-tip='Hands off with the new lead_id — the chain continues automatically.' style='position:absolute;top:-9px;right:-9px'></span>")}${ar}
     ${node("✅",FRM,"Completion","thank-you page")}
   </div>
   <div class="statline">
-    <div class="stat"><b>web_form</b>channel</div>
-    <div class="stat"><b>true</b>consent_given</div>
-    <div class="stat"><b>new → </b>lead status</div>
-    <div class="stat"><b>lead.created</b>audit action</div>
+    <div class="stat"><b>Web form</b>source</div>
+    <div class="stat"><b>Yes</b>consent given</div>
+    <div class="stat"><b>New</b>lead status</div>
+    <div class="stat"><b>Logged</b>audit trail</div>
   </div>`}
 
 function scrWF2(){return `
-  <p class="kicker">n8n · WF2 › Extract &amp; Classify — Claude Sonnet 4.6 output</p>
+  <p class="kicker">n8n · Extract &amp; Classify — Claude Sonnet 4.6 output</p>
   <div class="jsonbox">{
   <span class="j-k">"service_intent"</span><span class="j-p">:</span> <span class="j-s">"study_abroad"</span><span class="j-p">,</span>
   <span class="j-k">"additional_intents"</span><span class="j-p">:</span> <span class="j-p">[</span><span class="j-s">"admission_counselling"</span><span class="j-p">,</span> <span class="j-s">"visa_assistance"</span><span class="j-p">]</span><span class="j-p">,</span>
@@ -359,14 +360,14 @@ function scrWF2(){return `
   <div class="statline">
     <div class="stat"><b>7+</b>fields extracted</div>
     <div class="stat"><b>0.95</b>confidence</div>
-    <div class="stat"><b>~4s</b>Claude latency</div>
-    <div class="stat"><b>study_abroad</b>intent <span class="hs" data-tip="Classified into 1 of 10 intent categories. The schema is enforced by a Structured Output Parser sub-node."></span></div>
+    <div class="stat"><b>~4s</b>time taken</div>
+    <div class="stat"><b>Study abroad</b>intent <span class="hs" data-tip="Classified into 1 of 10 intent categories, with the structure enforced by a structured-output parser."></span></div>
   </div>`}
 
 function scrLead(){return `
   <p class="kicker">Supabase · Table Editor</p>
   <div class="sb">
-    <div class="bar"><span class="gn">leads</span> · 1 row returned · structured fields written by WF2</div>
+    <div class="bar"><span class="gn">leads</span> · 1 row returned · structured fields written by the extraction step</div>
     <div style="overflow:auto"><table class="tbl">
       <tr><th>name</th><th>service_intent</th><th>desired_course</th><th>preferred_countries</th><th>qualification</th><th>budget_range</th><th>lead_score</th><th>status</th></tr>
       <tr><td>Adaeze Okafor</td><td><span class="pill b">study_abroad</span></td><td>Nursing</td><td class="mono">["UK","Canada"]</td><td>WAEC</td><td>~15,000 USD/yr</td><td><b style="color:#fff">78</b></td><td><span class="pill a">info_needed</span></td></tr>
@@ -375,7 +376,7 @@ function scrLead(){return `
   <p class="tiny muted" style="margin-top:14px">The raw message becomes a structured, queryable record. <span class="hs" data-tip="preferred_countries and missing_fields are stored as jsonb arrays. Status is info_needed because some optional fields are still missing."></span> Persisted in Postgres, ready for retrieval and the dashboard.</p>`}
 
 function scrRetrieval(){return `
-  <p class="kicker">n8n · WF3 › Search KB — pgvector similarity search</p>
+  <p class="kicker">n8n · Knowledge Retrieval — vector similarity search</p>
   <div class="banner" style="background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.4);color:#93c5fd"><span>🔎</span> 6 chunks retrieved from kb_chunks · filtered to approved_for_customer_use = true</div>
   <div class="srcs">
     <div class="src"><div class="top"><span class="ti">UK Study Profile</span><span class="pill g">approved ✓</span></div><div class="sn">Nursing tuition ~£12,000–£20,000; IELTS 6.5–7.0 or OET; clinical placements; NMC registration context…</div><div class="score">cosine 0.34</div></div>
@@ -388,11 +389,11 @@ function scrRetrieval(){return `
   <p class="tiny muted" style="margin-top:14px">Grounding over invention: the model can only cite approved, dated documents. <span class="hs" data-tip="Embeddings: OpenAI text-embedding-3-small (1536-dim). The internal escalation policy is embedded but excluded at retrieval by the metadata filter."></span></p>`}
 
 function scrReco(){return `
-  <p class="kicker">n8n · WF3 › Draft Recommendation — Claude, grounded in retrieved sources</p>
+  <p class="kicker">n8n · Draft Recommendation — Claude, grounded in retrieved sources</p>
   <div class="badges">
-    <span class="bdg no">safe_to_send: false</span>
-    <span class="bdg rev">required_review: true</span>
-    <span class="bdg cf">confidence: 0.45</span>
+    <span class="bdg no">Won't auto-send</span>
+    <span class="bdg rev">Needs human review</span>
+    <span class="bdg cf">Confidence 0.45</span>
     <span class="bdg cf" style="background:rgba(20,184,166,.15);color:#5eead4;border-color:rgba(20,184,166,.4)">5 sources cited</span>
   </div>
   <div class="reco">
@@ -439,7 +440,7 @@ This guidance is informational only and subject to official requirements. Not a 
 Warm regards,
 PathPilot Study Abroad Team</div>
       </div>
-      <div class="tiny muted" style="margin-top:8px">Plus a 15-item document checklist. <span class="hs" data-tip="The recommendation is saved to the recommendations table as approval_status = pending_review. Nothing reaches the customer until a human approves."></span> Saved as <b>pending_review</b>.</div>
+      <div class="tiny muted" style="margin-top:8px">Plus a 15-item document checklist. <span class="hs" data-tip="The recommendation is saved to the recommendations table as approval_status = pending_review. Nothing reaches the customer until a human approves."></span> Saved for <b>review</b>.</div>
     </div>
   </div>`}
 
@@ -471,7 +472,7 @@ function scrApproval(){return `
   </div>`}
 
 function scrApproved(){return `
-  <p class="kicker">n8n · WF4 Human Approval — resumed on counsellor approval</p>
+  <p class="kicker">n8n · Human Approval — resumed on counsellor approval</p>
   <div class="banner"><span>✓</span> Approved by counsellor · customer email sent · lead advanced · follow-up scheduled</div>
   <div class="pipe">
     ${node("📧",FRM,"Send Customer Email","Gmail → Adaeze")}${ar}
@@ -486,11 +487,11 @@ function scrApproved(){return `
       <div class="tiny" style="color:var(--soft);line-height:1.5"><b style="color:#fff">✓ Delivered</b> — the approved Nursing guidance email is now in Adaeze's inbox, drafted by Claude and approved by a human.</div>
     </div>
     <div class="col card">
-      <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">follow_ups · new row</div>
-      <div class="kv tiny"><span>reason</span><span style="color:var(--soft)">Consultation offered — follow up in 2 days</span><span>due_at</span><span style="color:var(--soft)">+2 days</span><span>status</span><span><span class="pill a">pending</span></span></div>
+      <div class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:8px">Follow-up scheduled</div>
+      <div class="kv tiny"><span>reason</span><span style="color:var(--soft)">Consultation offered — follow up in 2 days</span><span>due</span><span style="color:var(--soft)">in 2 days</span><span>status</span><span><span class="pill a">pending</span></span></div>
     </div>
   </div>
-  <p class="tiny muted" style="margin-top:12px">WF5 runs daily at 08:00 and emails the counsellor when this follow-up comes due. <span class="hs" data-tip="No lead is forgotten — the scheduler picks up every due follow-up automatically."></span></p>`}
+  <p class="tiny muted" style="margin-top:12px">A scheduler runs daily at 08:00 and emails the counsellor when this follow-up comes due. <span class="hs" data-tip="No lead is forgotten — the scheduler picks up every due follow-up automatically."></span></p>`}
 
 function scrDash(){return `
   <p class="kicker">Supabase · SQL Editor — select * from v_pipeline_metrics</p>
@@ -516,11 +517,11 @@ function scrAudit(){return `
   <div class="sb">
     <div class="bar"><span class="gn">audit_logs</span> · the complete trail for this enquiry</div>
     <div style="overflow:auto"><table class="tbl">
-      <tr><th>ts</th><th>action</th><th>actor_type</th><th>actor</th><th>workflow</th></tr>
-      <tr><td class="mono tiny">10:00:01</td><td>lead.created</td><td><span class="pill b">system</span></td><td>wf1-lead-intake</td><td>WF1</td></tr>
-      <tr><td class="mono tiny">10:00:06</td><td>lead.extracted</td><td><span class="pill v">ai</span></td><td>wf2-extract</td><td>WF2</td></tr>
-      <tr><td class="mono tiny">10:00:43</td><td>recommendation.generated</td><td><span class="pill v">ai</span></td><td>wf3-recommend</td><td>WF3</td></tr>
-      <tr><td class="mono tiny">10:07:12</td><td>recommendation.approved_and_sent</td><td><span class="pill g">staff</span></td><td>wf4-approval</td><td>WF4</td></tr>
+      <tr><th>ts</th><th>action</th><th>actor_type</th><th>actor</th><th>step</th></tr>
+      <tr><td class="mono tiny">10:00:01</td><td>lead.created</td><td><span class="pill b">system</span></td><td>wf1-lead-intake</td><td>Intake</td></tr>
+      <tr><td class="mono tiny">10:00:06</td><td>lead.extracted</td><td><span class="pill v">ai</span></td><td>wf2-extract</td><td>Extraction</td></tr>
+      <tr><td class="mono tiny">10:00:43</td><td>recommendation.generated</td><td><span class="pill v">ai</span></td><td>wf3-recommend</td><td>Recommendation</td></tr>
+      <tr><td class="mono tiny">10:07:12</td><td>recommendation.approved_and_sent</td><td><span class="pill g">staff</span></td><td>wf4-approval</td><td>Approval</td></tr>
     </table></div>
   </div>
   <p class="tiny muted" style="margin-top:14px">Responsible AI in practice — every system, AI, and human action is logged with a timestamp, actor type, and workflow. <span class="hs" data-tip="No black boxes. A human (staff) approved the only customer-facing action."></span></p>`}
@@ -531,7 +532,7 @@ function scrClosing(){return `
     <div class="big">A raw enquiry → a human-approved plan, in &lt;60s</div>
     <p class="muted" style="font-size:14px">Lead captured · fields extracted · KB retrieved · recommendation drafted · human approval · response sent · follow-up scheduled · dashboard updated · fully audited.</p>
     <div class="recap">
-      <div class="it"><b>Responsible AI</b><p>safe_to_send is always false — no message reaches a customer without human approval.</p></div>
+      <div class="it"><b>Responsible AI</b><p>Nothing is auto-sent — no message reaches a customer without human approval.</p></div>
       <div class="it"><b>Grounded</b><p>Guidance is drawn only from approved, dated KB documents. The model can't invent fees or rules.</p></div>
       <div class="it"><b>Privacy</b><p>Consent captured before processing. No passport scans or bank statements stored.</p></div>
       <div class="it"><b>Auditable</b><p>Every AI, staff, and system action logged with timestamp and workflow ID.</p></div>
@@ -554,22 +555,22 @@ const steps=[
   {nav:"Welcome", url:"pathpilot · welcome", title:"PathPilot", crit:"", screen:scrIntro,
    body:"An agentic study-abroad & travel concierge. This interactive walkthrough reconstructs the full journey from real execution data. Use Next → to move through it."},
   {nav:"Submit enquiry", url:"fisayo-dmg.app.n8n.cloud/form/pathpilot-intake", title:"A customer submits an enquiry", crit:"Lead captured", screen:scrForm,
-   body:"The intake form — WF1's trigger. A prospective Nursing student fills it in. Consent is a hard gate. Click the green hotspot on Submit (or Next) to fire the workflow."},
+   body:"The intake form — where the journey begins. A prospective Nursing student fills it in. Consent is a hard gate. Click the green hotspot on Submit (or Next) to fire the workflow."},
   {nav:"Enquiry received", url:"fisayo-dmg.app.n8n.cloud/form/pathpilot-intake", title:"Enquiry received", crit:"", screen:scrThanks,
    body:"The customer gets an immediate confirmation. Everything from here runs automatically — extraction, retrieval, drafting, approval, and follow-up."},
-  {nav:"Intake (WF1)", url:"fisayo-dmg.app.n8n.cloud/executions · WF1", title:"The intake workflow runs", crit:"n8n receives the enquiry", screen:scrWF1,
-   body:"WF1 checks consent, normalises the data, upserts the lead into Supabase (dedup on email), writes an audit entry, then calls WF2 — all in about 1.4 seconds."},
-  {nav:"Extraction (WF2)", url:"fisayo-dmg.app.n8n.cloud/executions · WF2", title:"Claude extracts structured data", crit:"≥85% extraction · intent correct", screen:scrWF2,
+  {nav:"Intake", url:"fisayo-dmg.app.n8n.cloud/executions · intake", title:"The intake workflow runs", crit:"n8n receives the enquiry", screen:scrWF1,
+   body:"The intake workflow checks consent, normalises the data, stores the lead (deduped on email), writes an audit entry, then hands off to classification — all in about 1.4 seconds."},
+  {nav:"Extraction", url:"fisayo-dmg.app.n8n.cloud/executions · extraction", title:"Claude extracts structured data", crit:"≥85% extraction · intent correct", screen:scrWF2,
    body:"From one natural-language message, Claude produced this strict JSON — 7+ fields plus intent classification, a lead score, and 0.95 confidence, in about 4 seconds."},
   {nav:"Lead stored", url:"supabase.com · Table Editor › leads", title:"The lead is stored", crit:"Lead stored in CRM", screen:scrLead,
    body:"The structured fields are now a queryable row in Postgres — the operational record that drives retrieval, the dashboard, and follow-ups."},
-  {nav:"Knowledge retrieval", url:"fisayo-dmg.app.n8n.cloud/executions · WF3", title:"Relevant guidance is retrieved", crit:"Approved KB retrieved", screen:scrRetrieval,
-   body:"WF3 runs a pgvector similarity search over 12 curated documents and returns the 6 most relevant chunks — filtered to approved-for-customer-use only. The internal escalation policy is excluded."},
-  {nav:"Recommendation", url:"fisayo-dmg.app.n8n.cloud/executions · WF3", title:"Claude drafts the recommendation", crit:"Recommendation from sources · review required", screen:scrReco,
-   body:"Grounded in those sources, Claude drafts a staff summary, a full customer email, a 15-item checklist, and 7 risk flags — and marks it safe_to_send: false. It cannot reach the customer without approval."},
+  {nav:"Knowledge retrieval", url:"fisayo-dmg.app.n8n.cloud/executions · retrieval", title:"Relevant guidance is retrieved", crit:"Approved KB retrieved", screen:scrRetrieval,
+   body:"A retrieval step runs a vector similarity search over 12 curated documents and returns the 6 most relevant chunks — filtered to approved-for-customer-use only. The internal escalation policy is excluded."},
+  {nav:"Recommendation", url:"fisayo-dmg.app.n8n.cloud/executions · recommendation", title:"Claude drafts the recommendation", crit:"Recommendation from sources · review required", screen:scrReco,
+   body:"Grounded in those sources, Claude drafts a staff summary, a full customer email, a 15-item checklist, and 7 risk flags — and marks it not safe to send. It cannot reach the customer without approval."},
   {nav:"Counsellor review", url:"mail.google.com · PathPilot review", title:"The counsellor reviews by email", crit:"Human review step", screen:scrApproval,
-   body:"WF4 emails the counsellor the lead profile, the AI's reasoning with every risk flag, and the exact draft — with Approve & Send / Decline buttons. Click Approve & Send (green hotspot) to continue."},
-  {nav:"Approved & sent", url:"fisayo-dmg.app.n8n.cloud/executions · WF4", title:"Approved — response sent", crit:"Approved response sent · follow-up created", screen:scrApproved,
+   body:"The approval step emails the counsellor the lead profile, the AI's reasoning with every risk flag, and the exact draft — with Approve & Send / Decline buttons. Click Approve & Send (green hotspot) to continue."},
+  {nav:"Approved & sent", url:"fisayo-dmg.app.n8n.cloud/executions · approval", title:"Approved — response sent", crit:"Approved response sent · follow-up created", screen:scrApproved,
    body:"On approval the workflow resumes: it sends the customer email, marks the recommendation approved, advances the lead to consultation_offered, and schedules a 2-day follow-up — one click, five actions."},
   {nav:"Dashboard", url:"supabase.com · SQL Editor", title:"The dashboard reflects the lead", crit:"Dashboard reflects status", screen:scrDash,
    body:"Live Supabase views aggregate the pipeline — totals, qualified leads, recommendations, and average time-to-recommendation (under a minute). Adaeze's lead now shows as consultation_offered."},
@@ -585,7 +586,7 @@ const $=id=>document.getElementById(id);
 const snav=$("snav");
 steps.forEach((s,i)=>{
   const b=document.createElement("button");
-  b.innerHTML=`<span class="num">${i===0?'•':i}</span><span>${s.nav}</span>`;
+  b.innerHTML=`<span class="num">${i===0?'•':i}</span><span class="lbl">${s.nav}</span>`;
   b.onclick=()=>go(i);
   snav.appendChild(b);
 });
