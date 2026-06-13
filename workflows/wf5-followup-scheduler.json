@@ -1,5 +1,5 @@
 {
-  "id": "evlljAoRfXtUdsyG",
+  "id": "eHhwORZF0fafz27H",
   "name": "PathPilot — WF5 Follow-up Scheduler",
   "active": true,
   "description": "Phase 5. Runs daily at 8am: queries follow_ups WHERE status=pending AND due_at<=NOW(), sends a counsellor reminder email per due item via Gmail, marks each done, audits. Handles new lead (24h), consultation offered (2d), missing docs (3d), dormant (14d) follow-ups.",

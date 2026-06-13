@@ -1,5 +1,5 @@
 {
-  "id": "2m8aJW7jfucEbBL2",
+  "id": "HiGch8467bStq1ZR",
   "name": "PathPilot — WF7 KB Ingestion",
   "active": false,
   "description": "Phase 3. Manual trigger: fetches all pending KB documents from Supabase, chunks them (800 tokens, markdown-aware), embeds with OpenAI text-embedding-3-small, inserts into pgvector table kb_chunks with metadata for filtering, then marks all embedded. Run once per batch of new/updated KB docs.",

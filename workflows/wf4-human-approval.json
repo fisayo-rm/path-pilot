@@ -1,5 +1,5 @@
 {
-  "id": "kkfmOFXYivmHdnpg",
+  "id": "fyPNZQu6cmW9uFlY",
   "name": "PathPilot — WF4 Human Approval",
   "active": true,
   "description": "Phase 5. Called with recommendation_id: fetches recommendation+lead, emails counsellor via Gmail sendAndWait (Approve & Send / Decline buttons, 48h timeout). On approval: sends customer email, marks approved, updates lead to consultation_offered, creates 2-day follow-up, audits. On decline: marks rejected + audits.",

@@ -1,9 +1,9 @@
 {
-  "id": "fCKmY6J4GYQHhyEl",
+  "id": "wu4SJrSyW0eV6Mm5",
   "name": "PathPilot — WF1 Lead Intake",
   "active": true,
   "description": "Phase 1 + dedup, dual-trigger. Intake via EITHER the hosted form OR a JSON webhook (POST /webhook/console-intake, used by the demo console). 'Adapt Webhook Input' reshapes the webhook body into the form's field shape so both paths share: Normalise → consent gate → upsert lead (dedup on email) + audit → Call WF2 (extract/classify). The form responds via the trigger's built-in 'form submitted' text; completion nodes were removed so the webhook path never hits a form-only node. The webhook acks immediately and the console polls Supabase by email.",
-  "settings": { "executionOrder": "v1", "availableInMCP": true, "binaryMode": "separate", "timeSavedMode": "fixed", "errorWorkflow": "Sxtfdv2FS8avBTvk", "callerPolicy": "workflowsFromSameOwner" },
+  "settings": { "executionOrder": "v1", "availableInMCP": true, "binaryMode": "separate", "timeSavedMode": "fixed", "errorWorkflow": "rTgDUWltEAHUefZ9", "callerPolicy": "workflowsFromSameOwner" },
   "meta": { "aiBuilderAssisted": true, "builderVariant": "mcp" },
   "tags": [],
   "nodes": [
@@ -158,7 +158,7 @@
       "position": [1300, 420],
       "parameters": {
         "source": "database",
-        "workflowId": { "__rl": true, "mode": "id", "value": "38Cqymdj0fdOf38h", "cachedResultName": "PathPilot — WF2 Extract & Classify" },
+        "workflowId": { "__rl": true, "mode": "id", "value": "n6CraY5rGrP2mxzD", "cachedResultName": "PathPilot — WF2 Extract & Classify" },
         "workflowInputs": {
           "mappingMode": "defineBelow",
           "value": { "lead_id": "={{ $('Store Lead').item.json.id }}" },

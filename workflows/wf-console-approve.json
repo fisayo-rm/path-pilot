@@ -1,5 +1,5 @@
 {
-  "id": "7rDVWPMas5Xwy5ls",
+  "id": "kCoFxRSnU0cGxeYg",
   "name": "PathPilot — WF-Console Approve",
   "active": true,
   "description": "Console one-click approval (POST /webhook/console-approve, recommendation_id): send customer email, mark approved, advance lead to consultation_offered, create 2-day follow-up, audit. WF4 approve-branch without the Gmail wait (the console click is the approval). Customer email is routed to the operator inbox for the synthetic demo.",

@@ -1,5 +1,5 @@
 {
-  "id": "Sxtfdv2FS8avBTvk",
+  "id": "rTgDUWltEAHUefZ9",
   "name": "PathPilot — Error Notification",
   "active": true,
   "description": "Triggered automatically by n8n when any PathPilot workflow fails. Emails aikomofisayo@gmail.com with the failing workflow name, execution ID, error message, and a direct link to the execution log. Also writes workflow.error to audit_logs. Set this as the Error Workflow in each PathPilot workflow's Settings panel.",

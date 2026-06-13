@@ -1,5 +1,5 @@
 {
-  "id": "NdLVijaSVf1iHvIx",
+  "id": "VC0ybRpxomrOw6j6",
   "name": "PathPilot — WF3 RAG Recommendation",
   "active": true,
   "description": "Phase 3+4. Called with lead_id: retrieves lead, searches kb_chunks via pgvector similarity (topK=6, approved only), Code node aggregates chunks (c.document.pageContent format in n8n 2.22.4), Claude Sonnet drafts recommendation+checklist+risk flags, stores in recommendations table with pending_review status + audit.",
